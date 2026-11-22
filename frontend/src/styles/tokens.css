@@ -1,0 +1,64 @@
+/*
+ * Дизайн-токени EasyWay.
+ * Ті самі значення, що й у колекції змінних «EasyWay Colors» та текстових стилях у Figma (EZW-33).
+ * Назва змінної = назва токена у Figma, де «/» замінено на «-».
+ */
+:root {
+  /* Основа */
+  --bg-canvas: #f4f6fa;
+  --bg-surface: #ffffff;
+  --bg-subtle: #eef2f7;
+  --bg-sidebar: #0b1426;
+  --bg-sidebar-raised: #16213a;
+  --border-default: #e3e8f0;
+  --border-strong: #cbd3df;
+  --border-sidebar: #1f2b45;
+
+  /* Текст */
+  --text-primary: #0b1426;
+  --text-secondary: #4b5565;
+  --text-muted: #8a94a6;
+  --text-inverse: #ffffff;
+  --text-inverse-muted: #93a0b8;
+
+  /* Бренд */
+  --brand-primary: #3b5bfd;
+  --brand-primary-hover: #2c47e0;
+  --brand-primary-soft: #ebefff;
+  --brand-lime: #c8f25a;
+  --brand-lime-soft: #f2fbd9;
+  --brand-lime-ink: #3d5200;
+
+  /* Статуси та класи даних (Публічні=success, Внутрішні=info, Конфіденційні=warning, Обмежені=danger) */
+  --status-success: #12a150;
+  --status-success-soft: #e5f6ec;
+  --status-warning: #d97706;
+  --status-warning-soft: #fff3dc;
+  --status-danger: #e5484d;
+  --status-danger-soft: #fdebec;
+  --status-info: #0284c7;
+  --status-info-soft: #e3f3fc;
+
+  /* Транспорт */
+  --transit-tram: #e5484d;
+  --transit-trolleybus: #0f9f8f;
+  --transit-bus: #7c5cfc;
+
+  /* Типографіка */
+  --font-display: 'Unbounded', 'Inter', system-ui, sans-serif;
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  /* Радіуси, тіні, фокус */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+  --shadow-card: 0 1px 2px rgba(11, 20, 38, 0.04), 0 4px 12px rgba(11, 20, 38, 0.05);
+  --shadow-popover: 0 2px 6px rgba(11, 20, 38, 0.06), 0 16px 40px -4px rgba(11, 20, 38, 0.12);
+  --focus-ring: 0 0 0 4px rgba(59, 91, 253, 0.22);
+
+  --sidebar-width: 248px;
+  --topbar-height: 72px;
+}
