@@ -5,6 +5,7 @@
 import type { Role } from '../config/roles';
 import { ApiError } from './http';
 import type { LoginPayload, LoginResponse, User } from './types';
+import { appendAudit, save } from './mock/db';
 
 export const DEMO_PASSWORD = 'easyway2026';
 const TOKEN_TTL_SECONDS = 30 * 60;
@@ -37,8 +38,12 @@ export async function mockLogin({ email, password }: LoginPayload, latency = 450
   await delay(latency);
   const user = Object.values(DEMO_USERS).find((u) => u.email === email.trim().toLowerCase());
   if (!user || password !== DEMO_PASSWORD) {
+    appendAudit({ request_id: null, user_email: email.trim().toLowerCase() || '—', role: 'system', action: 'auth.login_failed', dataset_code: null, outcome: 'denied', reason_code: 'UNAUTHENTICATED' });
+    save();
     throw new ApiError('Невірна електронна пошта або пароль.', 401);
   }
+  appendAudit({ request_id: null, user_email: user.email, role: user.role, action: 'auth.login', dataset_code: null, outcome: 'info', reason_code: 'OK' });
+  save();
   return { access_token: makeMockToken(user), token_type: 'bearer', expires_in: TOKEN_TTL_SECONDS, user };
 }
 

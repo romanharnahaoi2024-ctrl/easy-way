@@ -1,0 +1,14 @@
+[
+  {
+    "user": "demo-allowed",
+    "consent": "active",
+    "dataset": "gps-demo",
+    "expected": 200
+  },
+  {
+    "user": "demo-no-consent",
+    "consent": "none/revoked",
+    "dataset": "gps-demo",
+    "expected": "403 NO_CONSENT"
+  }
+]

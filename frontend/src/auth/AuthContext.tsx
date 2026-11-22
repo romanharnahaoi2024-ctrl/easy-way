@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { fetchMe, login as apiLogin } from '../api/auth';
 import { setAuthToken } from '../api/http';
 import type { LoginPayload, User } from '../api/types';
-import { clearSession, loadSession, saveSession } from './storage';
+import { clearSession, loadSession, rememberEmail, saveSession } from './storage';
 
 interface AuthState {
   user: User | null;
@@ -63,7 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiLogin(payload);
       const expiresAt = Date.now() + res.expires_in * 1000;
       setAuthToken(res.access_token);
-      saveSession({ token: res.access_token, user: res.user, expiresAt }, remember);
+      saveSession({ token: res.access_token, user: res.user, expiresAt });
+      rememberEmail(remember ? res.user.email : null);
       scheduleExpiry(expiresAt);
       setNotice(null);
       setUser(res.user);

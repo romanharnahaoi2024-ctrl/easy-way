@@ -58,8 +58,8 @@ describe('Екран входу (EZW-48)', () => {
     await user.click(await screen.findByRole('button', { name: /Споживач/ }));
     expect(screen.getByLabelText('Електронна пошта')).toHaveValue(DEMO_USERS.consumer.email);
     await user.click(screen.getByRole('button', { name: 'Увійти' }));
-    expect(await screen.findByRole('heading', { name: 'Обмін даними' }, { timeout: 3000 })).toBeInTheDocument();
-    // сесію збережено («Запам’ятати мене») — відкриваємо чужий розділ напряму за адресою
+    expect(await screen.findByRole('heading', { name: 'Мапа транспорту' }, { timeout: 3000 })).toBeInTheDocument();
+    // сесія живе в sessionStorage вкладки — відкриваємо чужий розділ напряму за адресою
     view.unmount();
     renderAt('/audit');
     expect(await screen.findByRole('heading', { name: 'У вас немає прав на цей розділ' }, { timeout: 3000 })).toBeInTheDocument();
@@ -74,6 +74,7 @@ describe('Екран входу (EZW-48)', () => {
     expect(await screen.findByRole('heading', { name: 'Подання даних' }, { timeout: 3000 })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Вийти з системи' }));
     expect(await screen.findByRole('heading', { name: 'Вхід до EasyWay' })).toBeInTheDocument();
+    expect(sessionStorage.getItem('easyway.session')).toBeNull();
     expect(localStorage.getItem('easyway.session')).toBeNull();
   });
 });

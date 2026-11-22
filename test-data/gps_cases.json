@@ -1,0 +1,78 @@
+[
+  {
+    "id": "D-01",
+    "name": "Коректний GPS",
+    "expected": "accepted",
+    "payload": {
+      "vehicle_id": "BUS-01",
+      "observed_at": "2026-11-24T09:00:05+02:00",
+      "lat": 49.8408,
+      "lon": 23.9931
+    }
+  },
+  {
+    "id": "D-02",
+    "name": "Межові значення (lat 90, lon 180)",
+    "expected": "accepted",
+    "payload": {
+      "vehicle_id": "BUS-01",
+      "observed_at": "2026-11-24T09:00:10+02:00",
+      "lat": 90,
+      "lon": 180
+    }
+  },
+  {
+    "id": "D-03",
+    "name": "Широта поза межами",
+    "expected": "422 VALIDATION_FAILED",
+    "payload": {
+      "vehicle_id": "BUS-01",
+      "observed_at": "2026-11-24T09:00:05+02:00",
+      "lat": 95,
+      "lon": 23.9931
+    }
+  },
+  {
+    "id": "D-04",
+    "name": "Довгота поза межами",
+    "expected": "422 VALIDATION_FAILED",
+    "payload": {
+      "vehicle_id": "BUS-01",
+      "observed_at": "2026-11-24T09:00:05+02:00",
+      "lat": 49.8408,
+      "lon": -181
+    }
+  },
+  {
+    "id": "D-05",
+    "name": "Відсутнє vehicle_id",
+    "expected": "422 VALIDATION_FAILED",
+    "payload": {
+      "observed_at": "2026-11-24T09:00:05+02:00",
+      "lat": 49.8408,
+      "lon": 23.9931
+    }
+  },
+  {
+    "id": "D-06",
+    "name": "Дублікат (vehicle_id, observed_at)",
+    "expected": "rejected",
+    "payload": {
+      "vehicle_id": "BUS-01",
+      "observed_at": "2026-11-24T09:00:05+02:00",
+      "lat": 49.8408,
+      "lon": 23.9931
+    }
+  },
+  {
+    "id": "D-07",
+    "name": "Позиція застаріла (>30 с)",
+    "expected": "accepted, позначка stale",
+    "payload": {
+      "vehicle_id": "BUS-01",
+      "observed_at": "2026-11-24T08:00:00+02:00",
+      "lat": 49.8408,
+      "lon": 23.9931
+    }
+  }
+]

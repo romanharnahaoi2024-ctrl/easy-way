@@ -5,19 +5,24 @@
   "type": "module",
   "description": "EasyWay — веб-клієнт платформи керованого обміну даними про міський транспорт (EZW-48)",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "npm run gen:validators && vite",
+    "gen:validators": "node scripts/gen-validators.mjs",
+    "build": "npm run gen:validators && tsc -b && vite build",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "npm run gen:validators && vitest run",
     "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
     "@fontsource/unbounded": "^5.3.0",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "leaflet": "^1.9.4",
     "lucide-react": "^1.73.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-leaflet": "^4.2.1",
     "react-router-dom": "^6.30.6"
   },
   "devDependencies": {
@@ -25,6 +30,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.10",
+    "@types/leaflet": "1.9",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.7.0",

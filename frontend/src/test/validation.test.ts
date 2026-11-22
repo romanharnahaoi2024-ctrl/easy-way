@@ -23,6 +23,8 @@ describe('RBAC на клієнті', () => {
     expect(canAccess('consumer', '/audit')).toBe(false);
     expect(canAccess('consumer', '/carrier')).toBe(false);
     expect(canAccess('consumer', '/exchange')).toBe(true);
+    expect(canAccess('consumer', '/consents')).toBe(true);
+    expect(canAccess('carrier', '/consents')).toBe(false);
   });
   it('мапа доступна всім ролям, а домашня сторінка кожної ролі — дозволена', () => {
     for (const role of ['carrier', 'consumer', 'admin', 'auditor'] as const) {
