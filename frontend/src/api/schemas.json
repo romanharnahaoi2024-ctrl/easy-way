@@ -1,0 +1,201 @@
+{
+  "gps": {
+    "type": "array",
+    "minItems": 1,
+    "items": {
+      "type": "object",
+      "required": [
+        "fleet_code",
+        "lat",
+        "lon",
+        "observed_at"
+      ],
+      "properties": {
+        "fleet_code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "route_code": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "lat": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "lon": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "speed_kmh": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 150
+        },
+        "low_floor": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "schedule": {
+    "type": "array",
+    "minItems": 1,
+    "items": {
+      "type": "object",
+      "required": [
+        "route_code",
+        "stop_name",
+        "stop_order",
+        "arrival",
+        "departure"
+      ],
+      "properties": {
+        "route_code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trip_id": {
+          "type": "string"
+        },
+        "stop_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stop_order": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "arrival": {
+          "$comment": "GTFS дозволяє час після 24:00 для нічних рейсів",
+          "type": "string",
+          "pattern": "^([0-2]?\\d|3[0-1]):[0-5]\\d$"
+        },
+        "departure": {
+          "type": "string",
+          "pattern": "^([0-2]?\\d|3[0-1]):[0-5]\\d$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "stops": {
+    "type": "array",
+    "minItems": 1,
+    "items": {
+      "type": "object",
+      "required": [
+        "name",
+        "lat",
+        "lon"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lat": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "lon": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "incidents": {
+    "type": "array",
+    "minItems": 1,
+    "items": {
+      "type": "object",
+      "required": [
+        "id",
+        "route_code",
+        "kind",
+        "lat",
+        "lon",
+        "reported_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "route_code": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "delay",
+            "breakdown",
+            "roadworks",
+            "accident"
+          ]
+        },
+        "lat": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "lon": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        "reported_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "delay_min": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "occupancy": {
+    "type": "array",
+    "minItems": 1,
+    "items": {
+      "type": "object",
+      "required": [
+        "fleet_code",
+        "observed_at",
+        "load_pct"
+      ],
+      "properties": {
+        "fleet_code": {
+          "type": "string"
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "load_pct": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

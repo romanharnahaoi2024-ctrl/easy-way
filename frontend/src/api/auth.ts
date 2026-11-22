@@ -1,5 +1,4 @@
 import { request, USE_MOCK } from './http';
-import { mockLogin, mockMe } from './mock';
 import type { LoginPayload, LoginResponse, User } from './types';
 
 /**
@@ -8,7 +7,7 @@ import type { LoginPayload, LoginResponse, User } from './types';
  * new URLSearchParams({ username: email, password }) — більше нічого в клієнті змінювати не треба.
  */
 export function login(payload: LoginPayload): Promise<LoginResponse> {
-  if (USE_MOCK) return mockLogin(payload);
+  if (USE_MOCK) return import('./mock').then((m) => m.mockLogin(payload));
   return request<LoginResponse>('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email: payload.email.trim().toLowerCase(), password: payload.password }),
@@ -17,6 +16,6 @@ export function login(payload: LoginPayload): Promise<LoginResponse> {
 
 /** GET /auth/me — перевірка збереженої сесії після перезавантаження сторінки */
 export function fetchMe(token: string): Promise<User> {
-  if (USE_MOCK) return mockMe(token);
+  if (USE_MOCK) return import('./mock').then((m) => m.mockMe(token));
   return request<User>('/auth/me');
 }

@@ -1,13 +1,15 @@
 /** Тонка обгортка над fetch: базова адреса, JSON, токен, зрозумілі помилки. */
+import type { ApiErrorBody } from './types';
 
 export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000/api';
-export const USE_MOCK: boolean = (import.meta.env.VITE_USE_MOCK ?? 'true') !== 'false';
+/** Константа збірки: при VITE_USE_MOCK=false увесь демо-код (зокрема демо-паролі) не потрапляє в бандл */
+export const USE_MOCK: boolean = import.meta.env.VITE_USE_MOCK !== 'false';
 
 export class ApiError extends Error {
   constructor(
     message: string,
     public readonly status: number,
-    public readonly details?: unknown,
+    public readonly body?: ApiErrorBody,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -17,6 +19,9 @@ export class ApiError extends Error {
 let authToken: string | null = null;
 export function setAuthToken(token: string | null) {
   authToken = token;
+}
+export function getAuthToken() {
+  return authToken;
 }
 
 const STATUS_MESSAGES: Record<number, string> = {
@@ -32,7 +37,7 @@ const STATUS_MESSAGES: Record<number, string> = {
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set('Accept', 'application/json');
-  if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+  if (init.body && typeof init.body === 'string' && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   if (authToken) headers.set('Authorization', `Bearer ${authToken}`);
 
   let res: Response;
@@ -46,17 +51,25 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   const data: unknown = text ? safeJson(text) : null;
 
   if (!res.ok) {
-    // FastAPI повертає { detail: "..." } або { detail: [{ msg }] }
-    const detail = (data as { detail?: unknown } | null)?.detail;
+    const body = (data && typeof data === 'object' ? data : {}) as ApiErrorBody & { detail?: unknown };
+    // FastAPI: { detail: "..." } або { detail: [{ loc, msg }] } для 422 від pydantic
+    const detail = body.detail;
     const message =
       typeof detail === 'string'
         ? detail
-        : Array.isArray(detail) && detail[0]?.msg
-          ? String(detail[0].msg)
+        : Array.isArray(detail) && (detail[0] as { msg?: string })?.msg
+          ? String((detail[0] as { msg: string }).msg)
           : (STATUS_MESSAGES[res.status] ?? `Помилка ${res.status}`);
-    throw new ApiError(message, res.status, data);
+    throw new ApiError(message, res.status, { ...body, detail: message });
   }
   return data as T;
+}
+
+export function qs(params: Record<string, string | undefined>) {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (v) p.set(k, v);
+  const s = p.toString();
+  return s ? `?${s}` : '';
 }
 
 function safeJson(text: string): unknown {

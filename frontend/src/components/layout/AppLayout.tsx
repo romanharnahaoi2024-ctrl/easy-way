@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Bell, ChevronDown, CircleHelp, LogOut, Search, Settings } from 'lucide-react';
+import { Bell, ChevronDown, CircleHelp, LogOut, RotateCcw, Search } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
 import { NAV_ITEMS, ROLE_LABELS } from '../../config/roles';
 import { USE_MOCK } from '../../api/http';
@@ -35,10 +35,24 @@ export function AppLayout() {
         </nav>
         <div className="sidebar__spacer" />
         <div className="sidebar__nav">
-          <button className="nav-item" type="button" disabled title="З’явиться пізніше">
-            <Settings size={20} aria-hidden />
-            <span>Налаштування</span>
-          </button>
+          {USE_MOCK && (
+            <button
+              className="nav-item"
+              type="button"
+              title="Повернути демо-дані до початкового стану"
+              onClick={() => {
+                if (window.confirm('Скинути демо-дані (згоди, запити, подання, журнал) до початкового стану?')) {
+                  void import('../../api/mock/db').then((m) => {
+                    m.resetDb();
+                    window.location.reload();
+                  });
+                }
+              }}
+            >
+              <RotateCcw size={20} aria-hidden />
+              <span>Скинути демо-дані</span>
+            </button>
+          )}
           <a className="nav-item" href="https://www.figma.com/design/aqaGUoEIyp1rjWfN42P1in" target="_blank" rel="noreferrer">
             <CircleHelp size={20} aria-hidden />
             <span>Довідка (макети)</span>

@@ -5,7 +5,8 @@ import { useAuth } from '../auth/AuthContext';
 import { hasErrors, validateLogin, type LoginErrors } from '../auth/validation';
 import { canAccess, HOME_BY_ROLE, ROLE_HINTS, ROLE_LABELS, type Role } from '../config/roles';
 import { ApiError, USE_MOCK } from '../api/http';
-import { DEMO_PASSWORD, DEMO_USERS } from '../api/mock';
+import type { User } from '../api/types';
+import { rememberedEmail } from '../auth/storage';
 import { Badge, Button, Checkbox, Logo, TextField } from '../components/ui';
 import './login.css';
 
@@ -17,9 +18,11 @@ export function LoginPage() {
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(rememberedEmail);
   const [password, setPassword] = useState('');
-  const [remember, setRemember] = useState(true);
+  const [remember, setRemember] = useState(() => rememberedEmail() !== '');
+  // Демо-облікові дані підвантажуються лише в демо-режимі й не потрапляють у робочу збірку
+  const [demo, setDemo] = useState<{ users: Record<Role, User>; password: string } | null>(null);
   const [errors, setErrors] = useState<LoginErrors>({});
   const [submitted, setSubmitted] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -32,6 +35,7 @@ export function LoginPage() {
 
   useEffect(() => {
     emailRef.current?.focus();
+    if (USE_MOCK) void import('../api/mock').then((m) => setDemo({ users: m.DEMO_USERS, password: m.DEMO_PASSWORD }));
   }, []);
 
   // Після першої спроби перевіряємо поля «на льоту»
@@ -67,9 +71,10 @@ export function LoginPage() {
   }
 
   function pickDemo(role: Role) {
+    if (!demo) return;
     setDemoRole(role);
-    setEmail(DEMO_USERS[role].email);
-    setPassword(DEMO_PASSWORD);
+    setEmail(demo.users[role].email);
+    setPassword(demo.password);
     setServerError(null);
   }
 
@@ -150,7 +155,7 @@ export function LoginPage() {
               hint={capsLock ? 'Увімкнено Caps Lock' : undefined}
             />
             <div className="login__options">
-              <Checkbox label="Запам’ятати мене" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+              <Checkbox label="Запам’ятати email" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
               <button type="button" className="link-btn" onClick={() => setForgotOpen((v) => !v)} aria-expanded={forgotOpen}>
                 Забули пароль?
               </button>
@@ -165,7 +170,7 @@ export function LoginPage() {
             </Button>
           </form>
 
-          {USE_MOCK && (
+          {demo && (
             <>
               <div className="login__divider">
                 <span>або демо-доступ за роллю</span>

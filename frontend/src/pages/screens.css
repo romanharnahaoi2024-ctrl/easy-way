@@ -1,0 +1,562 @@
+/* ---------- Спільне для робочих екранів ---------- */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.kpi-row--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.field__hint.err {
+  color: var(--status-danger);
+  font-size: 13px;
+}
+.issues {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+.issues li {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--status-warning);
+  border-radius: 6px;
+  background: var(--status-warning-soft);
+  color: var(--text-secondary);
+}
+.issues li .mono {
+  color: var(--text-primary);
+}
+
+/* ---------- EZW-50 Обмін ---------- */
+.ex-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 20px;
+  align-items: start;
+}
+.ex-main,
+.ex-side {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.ds-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.ds-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.ds-card:hover {
+  border-color: var(--border-strong);
+}
+.ds-card--sel {
+  border: 1.5px solid var(--brand-primary);
+  padding: 11.5px;
+  background: var(--brand-primary-soft);
+}
+.ds-card__icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+}
+.ds-card--sel .ds-card__icon {
+  background: var(--bg-surface);
+  color: var(--brand-primary);
+}
+.ds-card__body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.ds-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.ex-form {
+  display: grid;
+  gap: 16px;
+}
+.ex-submit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.ex-result-anchor:focus {
+  outline: none;
+}
+.ex-preview-cap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.ex-history {
+  margin-top: 20px;
+}
+.ex-empty {
+  padding: 0 20px 14px;
+}
+.ex-purpose {
+  max-width: 320px;
+  color: var(--text-secondary);
+}
+
+.steps {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.step {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  padding-bottom: 14px;
+}
+.step:last-child {
+  padding-bottom: 0;
+}
+.step:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 32px;
+  bottom: 2px;
+  width: 2px;
+  background: var(--border-default);
+}
+.step--done:not(:last-child)::before {
+  background: var(--status-success);
+}
+.step__marker {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 50%;
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  font: 500 12px/1 var(--font-ui);
+  transition: background 0.2s, border-color 0.2s;
+}
+.step--run .step__marker {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary);
+  color: #fff;
+  box-shadow: var(--focus-ring);
+  animation: pulse 1s ease-in-out infinite;
+}
+.step--done .step__marker {
+  border-color: var(--status-success);
+  background: var(--status-success);
+  color: #fff;
+}
+.step--fail .step__marker {
+  border-color: var(--status-danger);
+  background: var(--status-danger);
+  color: #fff;
+}
+.step--skip .step__marker {
+  border-style: dashed;
+}
+.step__text {
+  display: grid;
+  gap: 1px;
+  padding-top: 1px;
+}
+.step__cap {
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 11px;
+}
+.step__title {
+  font-weight: 500;
+}
+.step--fail .step__title {
+  color: var(--status-danger);
+}
+.step--idle .step__title {
+  color: var(--text-muted);
+}
+
+/* ---------- EZW-51 Згоди ---------- */
+.cn-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 20px;
+  align-items: start;
+}
+.cn-list {
+  display: grid;
+  gap: 12px;
+}
+.cn-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+}
+.cn-item__icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+}
+.cn-item__icon--on {
+  background: var(--status-success-soft);
+  color: var(--status-success);
+}
+.cn-item__body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.cn-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.cn-item__actions {
+  display: flex;
+  gap: 8px;
+}
+.timeline {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.timeline li {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 10px;
+}
+.timeline i {
+  width: 8px;
+  height: 8px;
+  margin: 7px 4px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+.timeline i.on {
+  background: var(--status-success);
+}
+.timeline i.off {
+  background: var(--status-danger);
+}
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ---------- EZW-52 Панель перевізника ---------- */
+.cr-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  gap: 20px;
+  align-items: start;
+}
+.cr-col {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.drop {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border: 1.5px dashed rgba(59, 91, 253, 0.6);
+  border-radius: 14px;
+  background: rgba(235, 239, 255, 0.55);
+}
+.drop--over {
+  background: var(--brand-primary-soft);
+  border-color: var(--brand-primary);
+}
+.drop__icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--brand-primary);
+}
+.drop__text {
+  display: grid;
+  flex: 1;
+  gap: 3px;
+}
+.samples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+}
+.file-row__icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--status-success-soft);
+  color: var(--status-success);
+}
+.file-row__icon--bad {
+  background: var(--status-warning-soft);
+  color: var(--status-warning);
+}
+.file-row > div {
+  flex: 1;
+  min-width: 0;
+}
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.stat {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg-subtle);
+}
+.stat b {
+  font: 500 20px/28px var(--font-display);
+}
+.stat b.ok {
+  color: var(--status-success);
+}
+.stat b.warn {
+  color: var(--status-warning);
+}
+.gps-card {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-sidebar);
+  color: var(--text-inverse-muted);
+  box-shadow: var(--shadow-card);
+}
+.gps-card h2 {
+  color: #fff;
+}
+.gps-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.gps-big {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.gps-big b {
+  font: 600 28px/36px var(--font-display);
+  color: var(--brand-lime);
+}
+.gps-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.gps-metrics div {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--bg-sidebar-raised);
+  font-size: 12px;
+}
+.gps-metrics b {
+  color: #fff;
+  font-size: 14px;
+}
+.spark {
+  display: block;
+  width: 100%;
+  height: 56px;
+}
+
+/* ---------- EZW-53 Аудит ---------- */
+.au-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 16px;
+}
+.au-filters .form-row {
+  gap: 4px;
+}
+.au-filters label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.au-filters .select,
+.au-filters .date {
+  min-height: 40px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+.au-search {
+  flex: 1;
+  min-width: 200px;
+}
+.au-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 16px;
+  align-items: start;
+}
+.au-row-denied td:first-child {
+  box-shadow: inset 3px 0 0 var(--status-danger);
+}
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.pager span {
+  flex: 1;
+}
+.pager button {
+  min-width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+.pager button[aria-current='page'] {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary);
+  color: #fff;
+}
+.pager button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.chain {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--bg-subtle);
+}
+.chain__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+.chain__head span {
+  flex: 1;
+}
+
+@media (max-width: 1180px) {
+  .ex-grid,
+  .cn-grid,
+  .cr-grid,
+  .au-grid {
+    grid-template-columns: 1fr;
+  }
+  .kpi-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .ds-grid,
+  .form-grid-2,
+  .kpi-row,
+  .kpi-row--3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cn-flash {
+  margin-bottom: 16px;
+}
+.au-filters .select {
+  width: auto;
+  min-width: 150px;
+  max-width: 220px;
+}
+.au-filters .au-search {
+  flex: 1 1 200px;
+  min-width: 180px;
+}
+.au-filters .au-search .field__control {
+  height: 40px;
+}
+.au-filters__btns {
+  display: flex;
+  gap: 4px;
+}
+.chain__head .badge {
+  flex: none;
+}
+.gps-wait {
+  display: grid;
+  place-items: center;
+  height: 56px;
+  border: 1px dashed var(--border-sidebar);
+  border-radius: 10px;
+  font-size: 12px;
+}
