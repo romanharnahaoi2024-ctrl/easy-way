@@ -1,0 +1,20 @@
+{
+  "route": {"code": "M1", "direction": "Вокзал → Парк", "name": "Маршрут M1"},
+  "stops": [
+    {"name": "Вокзал", "lat": 49.8408, "lon": 23.9931, "order": 1},
+    {"name": "Площа", "lat": 49.8417, "lon": 24.0220, "order": 2},
+    {"name": "Парк", "lat": 49.8309, "lon": 24.0269, "order": 3}
+  ],
+  "trip": {"starts_at_local": "09:00", "stop_times": {"Вокзал": "09:00", "Площа": "09:07", "Парк": "09:15"}},
+  "vehicle": {"fleet_code": "BUS-01"},
+  "gps_positions": [
+    {"near": "Вокзал", "lat": 49.8408, "lon": 23.9931, "age_seconds": 20},
+    {"near": "Площа", "lat": 49.8417, "lon": 24.0220, "age_seconds": 5}
+  ],
+  "dataset": {"code": "gps-demo", "kind": "gps", "requires_consent": true},
+  "users": [
+    {"email": "demo-allowed", "role": "consumer", "permission": "read gps-demo", "consent": "active"},
+    {"email": "demo-no-consent", "role": "consumer", "permission": "read gps-demo", "consent": "absent"}
+  ],
+  "negative_quality_case": {"description": "підмінити lat на 95 до перевірки", "lat": 95, "expected": 422}
+}
