@@ -5,6 +5,7 @@ import json
 
 from sqlalchemy.orm import Session
 
+from app.auth import hash_password
 from app.db import SessionLocal
 from app.models import (
     Consent, Dataset, DatasetPermission, GpsPosition, Role, Route, RouteStop,
@@ -25,6 +26,8 @@ DEMO_DATA = {
         {"near": "Площа", "lat": 49.8417, "lon": 24.0220, "age_seconds": 5},
     ],
 }
+
+DEMO_PASSWORD = "easyway2026"
 
 
 def get_or_create(session: Session, model, **values):
@@ -132,11 +135,11 @@ def seed_database(session: Session) -> dict:
     allowed = get_or_create(
         session,
         User,
-        email="demo-allowed",
-        password_hash="!demo-not-for-auth",
+        email="i.melnyk@easyway.lviv.ua",
+        password_hash=hash_password(DEMO_PASSWORD),
         is_active=True,
     )
-    allowed.password_hash = "!demo-not-for-auth"
+    allowed.password_hash = hash_password(DEMO_PASSWORD)
     allowed.is_active = True
     if session.query(UserRole).filter_by(user_id=allowed.id, role_id=consumer.id).first() is None:
         session.add(UserRole(user_id=allowed.id, role_id=consumer.id))
@@ -154,11 +157,11 @@ def seed_database(session: Session) -> dict:
     no_consent = get_or_create(
         session,
         User,
-        email="demo-no-consent",
-        password_hash="!demo-not-for-auth",
+        email="demo.no-consent@easyway.lviv.ua",
+        password_hash=hash_password(DEMO_PASSWORD),
         is_active=True,
     )
-    no_consent.password_hash = "!demo-not-for-auth"
+    no_consent.password_hash = hash_password(DEMO_PASSWORD)
     no_consent.is_active = True
     if session.query(UserRole).filter_by(user_id=no_consent.id, role_id=consumer.id).first() is None:
         session.add(UserRole(user_id=no_consent.id, role_id=consumer.id))
