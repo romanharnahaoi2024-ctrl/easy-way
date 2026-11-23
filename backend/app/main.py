@@ -1,9 +1,9 @@
-"""Easy Way API: мінімальний каркас (EZW-38 розширює П4)."""
-import os
-
-import psycopg
+"""Easy Way API."""
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+
+from app.db import engine
 
 app = FastAPI(title="Easy Way API")
 app.add_middleware(
@@ -16,14 +16,10 @@ app.add_middleware(
 
 @app.get("/health")
 def health():
-    """Підтверджує, що сервер відповідає та має зʼєднання з БД."""
+    """Перевіряє доступність API та підключення до PostgreSQL."""
     try:
-        with psycopg.connect(
-            host=os.environ["DB_HOST"], port=os.environ.get("DB_PORT", "5432"),
-            dbname=os.environ["DB_NAME"], user=os.environ["DB_USER"],
-            password=os.environ["DB_PASSWORD"], connect_timeout=3,
-        ) as conn:
-            conn.execute("SELECT 1")
-    except Exception as exc:  # noqa: BLE001
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+    except Exception as exc:
         raise HTTPException(status_code=503, detail="db unavailable") from exc
-    return {"status": "ok"}
+    return {"status": "ok", "database": "ok"}
