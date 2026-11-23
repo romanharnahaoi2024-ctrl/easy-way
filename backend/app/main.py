@@ -1,9 +1,22 @@
-"""Easy Way API: мінімальний каркас (EZW-38 розширює П4)."""
-import os
+"""Easy Way API."""
+from datetime import datetime, timedelta, timezone
 
-import psycopg
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, EmailStr
+from sqlalchemy import text
+
+from app.auth import (
+    create_access_token,
+    get_current_user,
+    get_db,
+    get_user_roles,
+    require_dataset_permission,
+    verify_password,
+)
+from app.config import settings
+from app.db import engine
+from app.models import AuditEvent, User
 
 app = FastAPI(title="Easy Way API")
 app.add_middleware(
@@ -14,16 +27,90 @@ app.add_middleware(
 )
 
 
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class LoginUser(BaseModel):
+    id: int
+    email: str
+    roles: list[str]
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
+    user: LoginUser
+
+
+def record_login_event(db, outcome: str, reason_code: str) -> None:
+    db.add(AuditEvent(
+        request_id=None,
+        occurred_at=datetime.now(timezone.utc),
+        outcome=outcome,
+        reason_code=reason_code,
+    ))
+
+
+@app.post("/auth/login", response_model=LoginResponse)
+def login(payload: LoginRequest, db=Depends(get_db)):
+    user = db.query(User).filter(User.email == str(payload.email)).first()
+    now = datetime.now(timezone.utc)
+
+    if user is None:
+        record_login_event(db, "denied", "UNAUTHENTICATED")
+        db.commit()
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid credentials")
+
+    if user.locked_until and user.locked_until > now:
+        record_login_event(db, "denied", "UNAUTHENTICATED")
+        db.commit()
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="account locked")
+
+    if not user.is_active or not verify_password(payload.password, user.password_hash):
+        user.failed_login_count += 1
+        if user.failed_login_count >= 5:
+            user.locked_until = now + timedelta(minutes=15)
+        record_login_event(db, "denied", "UNAUTHENTICATED")
+        db.commit()
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid credentials")
+
+    user.failed_login_count = 0
+    user.locked_until = None
+    roles = get_user_roles(user, db)
+    record_login_event(db, "success", "OK")
+    db.commit()
+
+    return LoginResponse(
+        access_token=create_access_token(user),
+        expires_in=settings.jwt_ttl_seconds,
+        user=LoginUser(id=user.id, email=user.email, roles=roles),
+    )
+
+
+@app.get("/auth/me")
+def auth_me(user: User = Depends(get_current_user), db=Depends(get_db)):
+    return LoginUser(id=user.id, email=user.email, roles=get_user_roles(user, db)).model_dump()
+
+
 @app.get("/health")
 def health():
-    """Підтверджує, що сервер відповідає та має зʼєднання з БД."""
+    """Перевіряє доступність API та підключення до PostgreSQL."""
     try:
-        with psycopg.connect(
-            host=os.environ["DB_HOST"], port=os.environ.get("DB_PORT", "5432"),
-            dbname=os.environ["DB_NAME"], user=os.environ["DB_USER"],
-            password=os.environ["DB_PASSWORD"], connect_timeout=3,
-        ) as conn:
-            conn.execute("SELECT 1")
-    except Exception as exc:  # noqa: BLE001
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+    except Exception as exc:
         raise HTTPException(status_code=503, detail="db unavailable") from exc
-    return {"status": "ok"}
+    return {"status": "ok", "database": "ok"}
+
+
+@app.get("/datasets/{dataset_code}")
+def read_dataset(
+    dataset_code: str,
+    user: User = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    require_dataset_permission(user, dataset_code, "read", db)
+    return {"dataset": dataset_code, "data": "authorized"}
