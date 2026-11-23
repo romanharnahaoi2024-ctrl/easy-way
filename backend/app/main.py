@@ -6,7 +6,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import text
 
-from app.auth import create_access_token, get_current_user, get_db, get_user_roles, verify_password
+from app.auth import (
+    create_access_token,
+    get_current_user,
+    get_db,
+    get_user_roles,
+    require_dataset_permission,
+    verify_password,
+)
 from app.config import settings
 from app.db import engine
 from app.models import AuditEvent, User
@@ -97,3 +104,13 @@ def health():
     except Exception as exc:
         raise HTTPException(status_code=503, detail="db unavailable") from exc
     return {"status": "ok", "database": "ok"}
+
+
+@app.get("/datasets/{dataset_code}")
+def read_dataset(
+    dataset_code: str,
+    user: User = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    require_dataset_permission(user, dataset_code, "read", db)
+    return {"dataset": dataset_code, "data": "authorized"}

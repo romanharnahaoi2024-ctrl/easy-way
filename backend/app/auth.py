@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.db import SessionLocal
-from app.models import Role, User, UserRole
+from app.models import AuditEvent, Dataset, DatasetPermission, Role, User, UserRole
 
 password_hash = PasswordHash.recommended()
 bearer = HTTPBearer(auto_error=False)
@@ -71,3 +71,50 @@ def get_user_roles(user: User, db: Session) -> list[str]:
         .filter(UserRole.user_id == user.id)
         .all()
     ]
+
+
+def record_rbac_event(db: Session, outcome: str, reason_code: str) -> None:
+    db.add(AuditEvent(
+        request_id=None,
+        occurred_at=datetime.now(timezone.utc),
+        outcome=outcome,
+        reason_code=reason_code,
+    ))
+
+
+def require_dataset_permission(
+    user: User,
+    dataset_code: str,
+    action: str,
+    db: Session,
+) -> None:
+    dataset = db.query(Dataset).filter(Dataset.code == dataset_code).first()
+    if dataset is None:
+        record_rbac_event(db, "denied", "NO_ROLE_PERMISSION")
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="permission denied",
+        )
+
+    allowed = (
+        db.query(DatasetPermission.role_id)
+        .join(UserRole, UserRole.role_id == DatasetPermission.role_id)
+        .filter(
+            UserRole.user_id == user.id,
+            DatasetPermission.dataset_id == dataset.id,
+            DatasetPermission.action == action,
+        )
+        .first()
+    )
+
+    if allowed is None:
+        record_rbac_event(db, "denied", "NO_ROLE_PERMISSION")
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="permission denied",
+        )
+
+    record_rbac_event(db, "success", "OK")
+    db.commit()

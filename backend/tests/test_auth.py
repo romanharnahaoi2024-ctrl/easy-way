@@ -1,3 +1,7 @@
+import os
+
+os.environ.setdefault("DB_PASSWORD", "test-password")
+
 import jwt
 
 from fastapi.testclient import TestClient
