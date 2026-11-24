@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import text
 from app.consent import router as consents_router
+from app import audit
 
 from app.auth import (
     create_access_token,
@@ -28,6 +29,8 @@ app.add_middleware(
 )
 
 app.include_router(consents_router)
+
+app.include_router(audit.router)
 
 
 class LoginRequest(BaseModel):
