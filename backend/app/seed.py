@@ -2,6 +2,8 @@
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 import json
+import os
+import secrets
 
 from sqlalchemy.orm import Session
 
@@ -27,9 +29,6 @@ DEMO_DATA = {
     ],
 }
 
-DEMO_PASSWORD = "easyway2026"
-
-
 def get_or_create(session: Session, model, **values):
     instance = session.query(model).filter_by(**values).first()
     if instance is None:
@@ -53,7 +52,14 @@ def build_gps_positions(now: datetime, vehicle_id: int, trip_id: int, lat_overri
     ]
 
 
-def seed_database(session: Session) -> dict:
+def resolve_demo_password() -> tuple[str, bool]:
+    password = os.getenv("DEMO_SEED_PASSWORD")
+    if password:
+        return password, False
+    return secrets.token_urlsafe(18), True
+
+
+def seed_database(session: Session, demo_password: str) -> dict:
     route_data = DEMO_DATA["route"]
     route = get_or_create(
         session,
@@ -136,10 +142,8 @@ def seed_database(session: Session) -> dict:
         session,
         User,
         email="i.melnyk@easyway.lviv.ua",
-        password_hash=hash_password(DEMO_PASSWORD),
-        is_active=True,
     )
-    allowed.password_hash = hash_password(DEMO_PASSWORD)
+    allowed.password_hash = hash_password(demo_password)
     allowed.is_active = True
     if session.query(UserRole).filter_by(user_id=allowed.id, role_id=consumer.id).first() is None:
         session.add(UserRole(user_id=allowed.id, role_id=consumer.id))
@@ -158,10 +162,8 @@ def seed_database(session: Session) -> dict:
         session,
         User,
         email="demo.no-consent@easyway.lviv.ua",
-        password_hash=hash_password(DEMO_PASSWORD),
-        is_active=True,
     )
-    no_consent.password_hash = hash_password(DEMO_PASSWORD)
+    no_consent.password_hash = hash_password(demo_password)
     no_consent.is_active = True
     if session.query(UserRole).filter_by(user_id=no_consent.id, role_id=consumer.id).first() is None:
         session.add(UserRole(user_id=no_consent.id, role_id=consumer.id))
@@ -172,8 +174,12 @@ def seed_database(session: Session) -> dict:
 
 def main() -> None:
     session = SessionLocal()
+    demo_password, generated = resolve_demo_password()
     try:
-        print(json.dumps(seed_database(session), ensure_ascii=False))
+        summary = seed_database(session, demo_password)
+        if generated:
+            print(f"Generated DEMO_SEED_PASSWORD={demo_password}")
+        print(json.dumps(summary, ensure_ascii=False))
     finally:
         session.close()
 
