@@ -66,7 +66,8 @@ export interface Dataset {
 }
 
 export type RequestState = 'pending' | 'approved' | 'denied' | 'invalid';
-export type ReasonCode = 'OK' | 'NO_PERMISSION' | 'NO_CONSENT' | 'INVALID_DATA' | 'UNAUTHENTICATED';
+/** Коди причин — як у журналі аудиту на сервері (узгоджено з П4 25.11.2026) */
+export type ReasonCode = 'OK' | 'UNAUTHENTICATED' | 'NO_ROLE_PERMISSION' | 'NO_CONSENT' | 'CONSENT_REVOKED' | 'VALIDATION_FAILED';
 
 export interface ExchangePayload {
   dataset_code: string;
@@ -101,7 +102,8 @@ export interface ExchangeRequest {
 export interface ApiErrorBody {
   detail: string;
   reason_code?: ReasonCode;
-  request_id?: string;
+  /** null для 401: запит не створюється */
+  request_id?: string | null;
   errors?: ValidationIssue[];
 }
 
@@ -143,11 +145,32 @@ export interface AuditEvent {
   request_id: string | null;
   occurred_at: string;
   user_email: string;
-  role: Role | 'system';
+  /** unknown — сервер не надіслав роль користувача */
+  role: Role | 'system' | 'unknown';
   action: string;
   dataset_code: string | null;
   outcome: AuditOutcome;
   reason_code: ReasonCode | string;
+  details?: Record<string, unknown>;
+  hash?: string;
+  prev_hash?: string;
+}
+
+/** Запис GET /audit у тому вигляді, як його віддає сервер (EZW-42) */
+export interface AuditEventRaw {
+  id: string | number;
+  request_id: string | null;
+  occurred_at: string;
+  outcome: AuditOutcome;
+  reason_code: ReasonCode | string;
+  /** null для подій без запиту */
+  user_id?: string | number | null;
+  dataset?: string | null;
+  // Необов'язкові поля, якщо сервер їх додасть
+  user_email?: string;
+  role?: Role | 'system';
+  action?: string;
+  dataset_code?: string | null;
   details?: Record<string, unknown>;
   hash?: string;
   prev_hash?: string;

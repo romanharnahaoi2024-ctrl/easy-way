@@ -37,9 +37,10 @@ export const OUTCOME: Record<AuditOutcome, { label: string; tone: BadgeTone }> =
 
 export const REASON: Record<ReasonCode | string, string> = {
   OK: 'Успішно',
-  NO_PERMISSION: 'Роль не має права на цю дію',
+  NO_ROLE_PERMISSION: 'Роль не має права на цю дію',
   NO_CONSENT: 'Немає чинної згоди',
-  INVALID_DATA: 'Дані не пройшли перевірку JSON Schema',
+  CONSENT_REVOKED: 'Згоду відкликано',
+  VALIDATION_FAILED: 'Дані не пройшли перевірку JSON Schema',
   UNAUTHENTICATED: 'Невдала автентифікація',
 };
 
@@ -47,6 +48,7 @@ export const ACTION_LABEL: Record<string, string> = {
   'auth.login': 'Вхід у систему',
   'auth.login_failed': 'Невдалий вхід',
   'exchange.request': 'Запит на обмін',
+  'audit.event': 'Подія',
   'consent.grant': 'Надання згоди',
   'consent.revoke': 'Відкликання згоди',
   'dataset.submit': 'Подання набору',

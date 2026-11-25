@@ -16,7 +16,7 @@
 | Подання даних: файл JSON, перевірка JSON Schema до надсилання, 422, історія подань, стан потоку GPS | EZW-52 | UC-05 | перевізник |
 | Журнал аудиту: фільтри, деталі події, request_id, ланцюжок контрольних сум, експорт CSV | EZW-53 | UC-07 | адміністратор, аудитор |
 
-Інтеграція з API (EZW-54): усі виклики зібрано в `src/api`. Справжній сервер вмикається змінною `VITE_USE_MOCK=false`. Що саме очікує клієнт, описано в [docs/API_CONTRACT.md](docs/API_CONTRACT.md). Поки бекенд у розробці, демо-сервер у браузері повторює цей контракт: ті самі коди 200 / 403 / 422, `request_id` і запис аудиту на кожну дію.
+Інтеграція з API (EZW-54): усі виклики зібрано в `src/api`. Справжній сервер вмикається змінною `VITE_USE_MOCK=false`. Контракт, узгоджений з П4 25.11.2026 (EZW-42), описано в [docs/API_CONTRACT.md](../docs/API_CONTRACT.md). Поки бекенд у розробці, демо-сервер у браузері повторює цей контракт: ті самі коди 200 / 401 / 403 / 422, коди причин як у журналі аудиту (`NO_ROLE_PERMISSION`, `NO_CONSENT`, `CONSENT_REVOKED`, `VALIDATION_FAILED`), `request_id` і запис аудиту на кожну дію.
 
 ## Запуск
 
@@ -28,7 +28,7 @@ cp .env.example .env      # за замовчуванням увімкнено �
 npm run dev               # http://localhost:5173
 ```
 
-Інші команди: `npm test` (29 тестів), `npm run build` (збірка в `dist/`), `npm run preview` (перегляд збірки).
+Інші команди: `npm test` (37 тестів), `npm run build` (збірка в `dist/`), `npm run preview` (перегляд збірки).
 
 Наскрізний прогін у Chrome: `npm run build && npm run preview`, потім `pip install playwright && python e2e/run.py "<шлях до Chrome>"`. Скриншоти з’являться в `e2e/screenshots`.
 
@@ -49,7 +49,7 @@ npm run dev               # http://localhost:5173
 
 ## Підключення до бекенду
 
-Див. [docs/API_CONTRACT.md](docs/API_CONTRACT.md). CORS: дозвольте на бекенді джерело `http://localhost:5173`.
+Див. [docs/API_CONTRACT.md](../docs/API_CONTRACT.md). CORS: дозвольте на бекенді джерело `http://localhost:5173`.
 
 ## Структура
 
@@ -64,7 +64,7 @@ src/
   test/         модульні й екранні тести
 scripts/        gen-validators.mjs — попередня компіляція валідаторів
 e2e/run.py      наскрізний прогін у Chrome + скріншоти
-docs/           API_CONTRACT.md
+../docs/        API_CONTRACT.md — контракт API (спільний для команди)
 ```
 
 ## Безпека

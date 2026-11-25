@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Clock, Database, FileJson, Lock, Minus, Send, ShieldCheck, X } from 'lucide-react';
 import { createExchangeRequest, listDatasets, listMyRequests } from '../api/data';
-import { ApiError } from '../api/http';
+import { ApiError, isConsentReason, reasonFromStatus } from '../api/http';
 import type { Dataset, ExchangeResult, ReasonCode } from '../api/types';
 import { PageHeader } from '../components/layout/PageHeader';
 import { Badge, Button } from '../components/ui';
@@ -39,11 +39,12 @@ export function stepsFor(o: Outcome, requiresConsent: boolean): StepStatus[] {
   switch (o.reason) {
     case 'OK':
       return ['done', 'done', 'done', consent, 'done', 'done', 'done'];
-    case 'NO_PERMISSION':
+    case 'NO_ROLE_PERMISSION':
       return ['done', 'done', 'fail', 'idle', 'idle', 'done', 'fail'];
     case 'NO_CONSENT':
+    case 'CONSENT_REVOKED':
       return ['done', 'done', 'done', 'fail', 'idle', 'done', 'fail'];
-    case 'INVALID_DATA':
+    case 'VALIDATION_FAILED':
       return ['done', 'done', 'done', consent, 'fail', 'done', 'fail'];
     default:
       return ['fail', 'idle', 'idle', 'idle', 'idle', 'idle', 'idle'];
@@ -88,7 +89,7 @@ export function ExchangePage() {
     } catch (err) {
       const ae = err instanceof ApiError ? err : null;
       if (!ae) console.error(err);
-      o = { http: ae?.status ?? 0, reason: (ae?.body?.reason_code ?? 'UNAUTHENTICATED') as ReasonCode, message: ae?.message ?? 'Невідома помилка.', request_id: ae?.body?.request_id, errors: ae?.body?.errors };
+      o = { http: ae?.status ?? 0, reason: (ae?.body?.reason_code ?? reasonFromStatus(ae?.status ?? 0, ae?.message)) as ReasonCode, message: ae?.message ?? 'Невідома помилка.', request_id: ae?.body?.request_id ?? undefined, errors: ae?.body?.errors };
     }
     const final = stepsFor(o, Boolean(ds?.requires_consent));
     const gap = reduceMotion() ? 0 : 260;
@@ -211,7 +212,7 @@ export function ExchangePage() {
                     <td className="ex-purpose">{r.purpose}</td>
                     <td>
                       <Badge tone={r.state === 'approved' ? 'success' : r.state === 'denied' ? 'danger' : r.state === 'invalid' ? 'warning' : 'neutral'}>
-                        {r.state === 'approved' ? '200 · видано' : r.state === 'denied' ? `403 · ${r.reason_code === 'NO_CONSENT' ? 'немає згоди' : 'немає права'}` : r.state === 'invalid' ? '422 · помилка даних' : 'в обробці'}
+                        {r.state === 'approved' ? '200 · видано' : r.state === 'denied' ? `403 · ${isConsentReason(r.reason_code) ? 'немає згоди' : 'немає права'}` : r.state === 'invalid' ? '422 · помилка даних' : 'в обробці'}
                       </Badge>
                     </td>
                   </tr>
@@ -268,7 +269,7 @@ function ResultCard({ o }: { o: Outcome }) {
         </dd>
       </dl>
       {!ok && <Notice tone={tone === 'warning' ? 'warning' : 'danger'}>{o.message}</Notice>}
-      {o.reason === 'NO_CONSENT' && (
+      {isConsentReason(o.reason) && (
         <Link className="btn btn--secondary" to="/consents">
           <ShieldCheck size={18} aria-hidden /> Перейти до згод
         </Link>

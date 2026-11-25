@@ -38,30 +38,30 @@ async function status(p: Promise<unknown>) {
 }
 
 describe('API керованого обміну (демо-сервер за контрактом)', () => {
-  it('200 → маскування; після відкликання згоди → 403 NO_CONSENT; аудит з тим самим request_id', async () => {
+  it('200 → маскування; після відкликання згоди → 403 CONSENT_REVOKED; аудит з тим самим request_id', async () => {
     as('consumer');
     const ok = await api.createExchangeRequest({ dataset_code: 'gps-demo', action: 'read', purpose: 'Аналіз пунктуальності' });
     expect(ok.state).toBe('approved');
     expect(String(ok.records[0].fleet_code)).toMatch(/^veh_[0-9a-f]{8}$/);
     await api.revokeConsent('CN-2026-014');
     const denied = await status(api.createExchangeRequest({ dataset_code: 'gps-demo', action: 'read', purpose: 'Повторний запит' }));
-    expect(denied).toMatchObject({ status: 403, reason: 'NO_CONSENT' });
+    expect(denied).toMatchObject({ status: 403, reason: 'CONSENT_REVOKED' });
     as('auditor');
-    const ev = await api.listAuditEvents({ q: denied.request_id });
+    const ev = await api.listAuditEvents({ q: denied.request_id ?? undefined });
     expect(ev).toHaveLength(1);
-    expect(ev[0]).toMatchObject({ outcome: 'denied', reason_code: 'NO_CONSENT', dataset_code: 'gps-demo' });
+    expect(ev[0]).toMatchObject({ outcome: 'denied', reason_code: 'CONSENT_REVOKED', dataset_code: 'gps-demo' });
   });
 
-  it('403 NO_PERMISSION для класу «Обмежені», 422 для набору з lat = 95', async () => {
+  it('403 NO_ROLE_PERMISSION для класу «Обмежені», 422 VALIDATION_FAILED для набору з lat = 95', async () => {
     as('consumer');
-    expect(await status(api.createExchangeRequest({ dataset_code: 'driver-personal', action: 'read', purpose: 'Перевірка доступу' }))).toMatchObject({ status: 403, reason: 'NO_PERMISSION' });
-    expect(await status(api.createExchangeRequest({ dataset_code: 'incidents', action: 'read', purpose: 'Перевірка якості' }))).toMatchObject({ status: 422, reason: 'INVALID_DATA' });
+    expect(await status(api.createExchangeRequest({ dataset_code: 'driver-personal', action: 'read', purpose: 'Перевірка доступу' }))).toMatchObject({ status: 403, reason: 'NO_ROLE_PERMISSION' });
+    expect(await status(api.createExchangeRequest({ dataset_code: 'incidents', action: 'read', purpose: 'Перевірка якості' }))).toMatchObject({ status: 422, reason: 'VALIDATION_FAILED' });
   });
 
   it('подання перевізника: коректний файл прийнято, файл з lat = 95 → 422; споживач не бачить журнал', async () => {
     as('carrier');
     expect((await api.submitDataset('gps-demo', 'ok.json', sampleGps(false))).state).toBe('accepted');
-    expect(await status(api.submitDataset('gps-demo', 'bad.json', sampleGps(true)))).toMatchObject({ status: 422, reason: 'INVALID_DATA' });
+    expect(await status(api.submitDataset('gps-demo', 'bad.json', sampleGps(true)))).toMatchObject({ status: 422, reason: 'VALIDATION_FAILED' });
     as('consumer');
     expect(await status(api.listAuditEvents())).toMatchObject({ status: 403 });
   });
@@ -70,9 +70,10 @@ describe('API керованого обміну (демо-сервер за ко
     const o = (reason: string) => ({ http: 0, reason: reason as never, message: '' });
     expect(stepsFor(o('OK'), true)).toEqual(['done', 'done', 'done', 'done', 'done', 'done', 'done']);
     expect(stepsFor(o('OK'), false)[3]).toBe('skip');
-    expect(stepsFor(o('NO_PERMISSION'), true)[2]).toBe('fail');
+    expect(stepsFor(o('NO_ROLE_PERMISSION'), true)[2]).toBe('fail');
     expect(stepsFor(o('NO_CONSENT'), true)[3]).toBe('fail');
-    expect(stepsFor(o('INVALID_DATA'), true)[4]).toBe('fail');
+    expect(stepsFor(o('CONSENT_REVOKED'), true)[3]).toBe('fail');
+    expect(stepsFor(o('VALIDATION_FAILED'), true)[4]).toBe('fail');
   });
 
   it('журнал: ланцюжок контрольних сум цілісний, CSV з BOM і заголовком', async () => {

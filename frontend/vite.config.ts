@@ -35,7 +35,7 @@ function csp(apiUrl: string): Plugin {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', 'VITE_');
   return {
-    plugins: [react(), csp(env.VITE_API_URL ?? 'http://localhost:8000/api')],
+    plugins: [react(), csp(env.VITE_API_URL ?? 'http://localhost:8000')],
     server: { port: 5173 },
     test: {
       environment: 'jsdom',

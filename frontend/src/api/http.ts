@@ -1,7 +1,7 @@
 /** Тонка обгортка над fetch: базова адреса, JSON, токен, зрозумілі помилки. */
-import type { ApiErrorBody } from './types';
+import type { ApiErrorBody, ReasonCode } from './types';
 
-export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000/api';
+export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000';
 /** Константа збірки: при VITE_USE_MOCK=false увесь демо-код (зокрема демо-паролі) не потрапляє в бандл */
 export const USE_MOCK: boolean = import.meta.env.VITE_USE_MOCK !== 'false';
 
@@ -60,10 +60,25 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
         : Array.isArray(detail) && (detail[0] as { msg?: string })?.msg
           ? String((detail[0] as { msg: string }).msg)
           : (STATUS_MESSAGES[res.status] ?? `Помилка ${res.status}`);
-    throw new ApiError(message, res.status, { ...body, detail: message });
+    const reason_code = (body.reason_code as ReasonCode | undefined) ?? reasonFromStatus(res.status, message);
+    throw new ApiError(message, res.status, { ...body, detail: message, reason_code, errors: Array.isArray(body.errors) ? body.errors : [] });
   }
   return data as T;
 }
+
+/**
+ * Код причини, якщо сервер його не надіслав: визначаємо за HTTP-статусом.
+ * 403 зі словом «згод»/consent у тексті вважаємо відмовою через згоду.
+ */
+export function reasonFromStatus(status: number, detail?: string): ReasonCode {
+  if (status === 401) return 'UNAUTHENTICATED';
+  if (status === 422) return 'VALIDATION_FAILED';
+  if (status === 403) return /згод|consent/i.test(detail ?? '') ? 'NO_CONSENT' : 'NO_ROLE_PERMISSION';
+  return 'UNAUTHENTICATED';
+}
+
+/** Обидві причини зупиняють запит на кроці 4 («Перевірити згоду») */
+export const isConsentReason = (r?: string | null) => r === 'NO_CONSENT' || r === 'CONSENT_REVOKED';
 
 export function qs(params: Record<string, string | undefined>) {
   const p = new URLSearchParams();
