@@ -94,7 +94,7 @@ export function CarrierPage() {
       setServer({ tone: 'success', text: `Подання ${s.submission_id} прийнято: ${fmtNum(s.records)} записів.`, sub: s, requestId: s.request_id });
     } catch (e) {
       const ae = e instanceof ApiError ? e : null;
-      setServer({ tone: ae?.status === 422 ? 'warning' : 'danger', text: `HTTP ${ae?.status ?? '—'} · ${ae?.message ?? 'Не вдалося надіслати файл.'}`, requestId: ae?.body?.request_id });
+      setServer({ tone: ae?.status === 422 ? 'warning' : 'danger', text: `HTTP ${ae?.status ?? '—'} · ${ae?.message ?? 'Не вдалося надіслати файл.'}`, requestId: ae?.body?.request_id ?? undefined });
     } finally {
       setBusy(false);
       void subs.reload();

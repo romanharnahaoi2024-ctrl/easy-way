@@ -22,12 +22,12 @@ export function setMockLatency(ms: number) {
 function currentUser(): User {
   const token = getAuthToken();
   const role = token ? (decodeTokenPayload(token)?.role as Role | undefined) : undefined;
-  if (!role || !DEMO_USERS[role]) throw new ApiError('Потрібна автентифікація.', 401, { detail: 'Потрібна автентифікація.', reason_code: 'UNAUTHENTICATED' });
+  if (!role || !DEMO_USERS[role]) throw new ApiError('Потрібна автентифікація.', 401, { detail: 'Потрібна автентифікація.', reason_code: 'UNAUTHENTICATED', request_id: null });
   return DEMO_USERS[role];
 }
 
 function requireRole(u: User, roles: Role[]) {
-  if (!roles.includes(u.role)) throw new ApiError('Недостатньо прав для цієї дії.', 403, { detail: 'Недостатньо прав для цієї дії.', reason_code: 'NO_PERMISSION' });
+  if (!roles.includes(u.role)) throw new ApiError('Недостатньо прав для цієї дії.', 403, { detail: 'Недостатньо прав для цієї дії.', reason_code: 'NO_ROLE_PERMISSION' });
 }
 
 /* ---------------- Транспорт ---------------- */
@@ -80,6 +80,13 @@ export async function listDatasets(): Promise<Dataset[]> {
 }
 
 const can = (role: Role, dataset: string, action: 'read' | 'submit') => PERMISSIONS.some((p) => p.role === role && p.dataset === dataset && p.action === action);
+
+/** Остання згода користувача на набір існує, але відкликана */
+function wasRevoked(email: string, dataset: string): boolean {
+  const mine = getDb().consents.filter((c) => c.user_email === email && c.dataset_code === dataset);
+  const last = mine.sort((a, b) => Date.parse(b.granted_at) - Date.parse(a.granted_at))[0];
+  return !!last?.revoked_at;
+}
 
 function activeConsent(email: string, dataset: string, at = Date.now()): Consent | undefined {
   return getDb().consents.find((c) => c.user_email === email && c.dataset_code === dataset && !c.revoked_at && Date.parse(c.granted_at) <= at && Date.parse(c.valid_until) >= at);
@@ -142,20 +149,24 @@ export async function createExchangeRequest(p: ExchangePayload): Promise<Exchang
   };
   // Крок 3: право ролі на дію
   if (!can(u.role, ds.code, 'read')) {
-    finish('denied', 'NO_PERMISSION', { required: PERMISSIONS.filter((x) => x.dataset === ds.code && x.action === 'read').map((x) => x.role) });
-    throw new ApiError('Роль не має права читати цей набір даних.', 403, { detail: 'Роль не має права читати цей набір даних.', reason_code: 'NO_PERMISSION', request_id: req.request_id });
+    finish('denied', 'NO_ROLE_PERMISSION', { required: PERMISSIONS.filter((x) => x.dataset === ds.code && x.action === 'read').map((x) => x.role) });
+    throw new ApiError('Роль не має права читати цей набір даних.', 403, { detail: 'Роль не має права читати цей набір даних.', reason_code: 'NO_ROLE_PERMISSION', request_id: req.request_id });
   }
   // Крок 4: чинна згода, якщо її вимагає політика набору
   if (ds.requires_consent && !activeConsent(u.email, ds.code)) {
-    finish('denied', 'NO_CONSENT');
-    throw new ApiError('Немає чинної згоди на обробку цього набору.', 403, { detail: 'Немає чинної згоди на обробку цього набору.', reason_code: 'NO_CONSENT', request_id: req.request_id });
+    // Відкликана згода й відсутня згода — різні причини в журналі (вимоги до аудиту)
+    const revoked = wasRevoked(u.email, ds.code);
+    const reason = revoked ? 'CONSENT_REVOKED' : 'NO_CONSENT';
+    const detail = revoked ? 'Згоду на обробку цього набору відкликано.' : 'Немає чинної згоди на обробку цього набору.';
+    finish('denied', reason);
+    throw new ApiError(detail, 403, { detail, reason_code: reason, request_id: req.request_id });
   }
   // Крок 5: перевірка якості за JSON Schema
   const rows = datasetRecords(ds.code);
   const v = validateRecords(ds.kind, rows);
   if (!v.valid) {
-    finish('invalid', 'INVALID_DATA', { errors: v.errors.length });
-    throw new ApiError('Набір не відповідає схемі, дані не видано.', 422, { detail: 'Набір не відповідає схемі, дані не видано.', reason_code: 'INVALID_DATA', request_id: req.request_id, errors: v.errors });
+    finish('invalid', 'VALIDATION_FAILED', { errors: v.errors.length });
+    throw new ApiError('Набір не відповідає схемі, дані не видано.', 422, { detail: 'Набір не відповідає схемі, дані не видано.', reason_code: 'VALIDATION_FAILED', request_id: req.request_id, errors: v.errors });
   }
   // Крок 7: відповідь 200 із замаскованими даними
   const m = mask(ds.code, rows);
@@ -203,7 +214,7 @@ export async function revokeConsent(id: string): Promise<Consent> {
   const u = currentUser();
   const c = getDb().consents.find((x) => x.id === id);
   if (!c) throw new ApiError('Згоду не знайдено.', 404, { detail: 'Згоду не знайдено.' });
-  if (c.user_email !== u.email && u.role !== 'admin') throw new ApiError('Недостатньо прав для цієї дії.', 403, { detail: 'Недостатньо прав для цієї дії.', reason_code: 'NO_PERMISSION' });
+  if (c.user_email !== u.email && u.role !== 'admin') throw new ApiError('Недостатньо прав для цієї дії.', 403, { detail: 'Недостатньо прав для цієї дії.', reason_code: 'NO_ROLE_PERMISSION' });
   c.revoked_at = new Date().toISOString();
   appendAudit({ request_id: null, user_email: u.email, role: u.role, action: 'consent.revoke', dataset_code: c.dataset_code, outcome: 'info', reason_code: 'OK', details: { consent_id: c.id } });
   save();
@@ -219,9 +230,9 @@ export async function submitDataset(dataset_code: string, file_name: string, dat
   if (!ds) throw new ApiError('Набір даних не знайдено.', 404, { detail: 'Набір даних не знайдено.' });
   const request_id = nextId('req');
   if (!can(u.role, ds.code, 'submit')) {
-    appendAudit({ request_id, user_email: u.email, role: u.role, action: 'dataset.submit', dataset_code, outcome: 'denied', reason_code: 'NO_PERMISSION' });
+    appendAudit({ request_id, user_email: u.email, role: u.role, action: 'dataset.submit', dataset_code, outcome: 'denied', reason_code: 'NO_ROLE_PERMISSION' });
     save();
-    throw new ApiError('Роль не має права подавати цей набір.', 403, { detail: 'Роль не має права подавати цей набір.', reason_code: 'NO_PERMISSION', request_id });
+    throw new ApiError('Роль не має права подавати цей набір.', 403, { detail: 'Роль не має права подавати цей набір.', reason_code: 'NO_ROLE_PERMISSION', request_id });
   }
   const v = validateRecords(ds.kind, data);
   const sub: Submission = {
@@ -229,9 +240,9 @@ export async function submitDataset(dataset_code: string, file_name: string, dat
     valid_ratio: v.total ? v.validCount / v.total : 0, state: v.valid ? 'accepted' : 'rejected', created_at: new Date().toISOString(), request_id, errors: v.valid ? undefined : v.errors,
   };
   getDb().submissions.unshift(sub);
-  appendAudit({ request_id, user_email: u.email, role: u.role, action: 'dataset.submit', dataset_code, outcome: v.valid ? 'approved' : 'invalid', reason_code: v.valid ? 'OK' : 'INVALID_DATA', details: { file_name, records: v.total, errors: v.errors.length } });
+  appendAudit({ request_id, user_email: u.email, role: u.role, action: 'dataset.submit', dataset_code, outcome: v.valid ? 'approved' : 'invalid', reason_code: v.valid ? 'OK' : 'VALIDATION_FAILED', details: { file_name, records: v.total, errors: v.errors.length } });
   save();
-  if (!v.valid) throw new ApiError('Файл не пройшов перевірку JSON Schema. Дані не прийнято.', 422, { detail: 'Файл не пройшов перевірку JSON Schema. Дані не прийнято.', reason_code: 'INVALID_DATA', request_id, errors: v.errors });
+  if (!v.valid) throw new ApiError('Файл не пройшов перевірку JSON Schema. Дані не прийнято.', 422, { detail: 'Файл не пройшов перевірку JSON Schema. Дані не прийнято.', reason_code: 'VALIDATION_FAILED', request_id, errors: v.errors });
   return sub;
 }
 

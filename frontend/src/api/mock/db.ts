@@ -55,10 +55,10 @@ function seed(): MockDb {
     [164, 'system', 'system', 'quality.validate', 'schedule-gtfs', 'approved', 'OK'],
     [150, 'm.hnatyshyn@easyway.lviv.ua', 'admin', 'policy.update', 'occupancy', 'info', 'OK'],
     [131, 'adtarget@partner.example', 'consumer', 'exchange.request', 'gps-demo', 'denied', 'NO_CONSENT'],
-    [118, 'i.melnyk@easyway.lviv.ua', 'consumer', 'exchange.request', 'driver-personal', 'denied', 'NO_PERMISSION'],
+    [118, 'i.melnyk@easyway.lviv.ua', 'consumer', 'exchange.request', 'driver-personal', 'denied', 'NO_ROLE_PERMISSION'],
     [97, 'analytics@city.lviv.ua', 'consumer', 'exchange.request', 'gps-demo', 'approved', 'OK'],
-    [80, 'o.boiko@easyway.lviv.ua', 'carrier', 'dataset.submit', 'gps-demo', 'invalid', 'INVALID_DATA'],
-    [61, 'analytics@city.lviv.ua', 'consumer', 'exchange.request', 'incidents', 'invalid', 'INVALID_DATA'],
+    [80, 'o.boiko@easyway.lviv.ua', 'carrier', 'dataset.submit', 'gps-demo', 'invalid', 'VALIDATION_FAILED'],
+    [61, 'analytics@city.lviv.ua', 'consumer', 'exchange.request', 'incidents', 'invalid', 'VALIDATION_FAILED'],
     [44, 'unknown@mail.example', 'system', 'auth.login_failed', null, 'denied', 'UNAUTHENTICATED'],
     [23, 'm.hnatyshyn@easyway.lviv.ua', 'admin', 'exchange.request', 'occupancy', 'approved', 'OK'],
   ];

@@ -2,7 +2,7 @@
 
 Запуск: npm run build && npx vite preview --port 4173, потім
   pip install playwright && python e2e/run.py [шлях до Chrome]
-Скрипт проходить сценарій docs/API_CONTRACT.md і зберігає скріншоти в e2e/screenshots.
+Скрипт проходить сценарій ../docs/API_CONTRACT.md і зберігає скріншоти в e2e/screenshots.
 """
 import asyncio, json
 from playwright.async_api import async_playwright

@@ -21,6 +21,8 @@ export function chainIntact(events: AuditEvent[]) {
   return true;
 }
 
+const roleLabel = (r: AuditEvent['role']) => (r === 'system' ? 'Система' : r === 'unknown' ? 'роль не вказана' : ROLE_LABELS[r]);
+
 export function toCsv(rows: AuditEvent[]) {
   const head = ['id', 'occurred_at', 'user_email', 'role', 'action', 'dataset_code', 'outcome', 'reason_code', 'request_id'];
   const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
@@ -186,7 +188,7 @@ export function AuditPage() {
                         <td className="mono">{fmtTime(e.occurred_at)}</td>
                         <td>
                           {e.user_email}
-                          <span className="sub">{e.role === 'system' ? 'Система' : ROLE_LABELS[e.role]}</span>
+                          <span className="sub">{roleLabel(e.role)}</span>
                         </td>
                         <td>
                           {ACTION_LABEL[e.action] ?? e.action}
@@ -228,7 +230,7 @@ export function AuditPage() {
                 <dt>Суб’єкт</dt>
                 <dd>{selected.user_email}</dd>
                 <dt>Роль</dt>
-                <dd>{selected.role === 'system' ? 'Система' : ROLE_LABELS[selected.role]}</dd>
+                <dd>{roleLabel(selected.role)}</dd>
                 <dt>Дія</dt>
                 <dd className="mono">{selected.action}</dd>
                 <dt>Набір</dt>
