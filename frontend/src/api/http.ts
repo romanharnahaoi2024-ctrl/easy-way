@@ -1,7 +1,7 @@
 /** Тонка обгортка над fetch: базова адреса, JSON, токен, зрозумілі помилки. */
 import type { ApiErrorBody, ReasonCode } from './types';
 
-export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000/api';
+export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000';
 /** Константа збірки: при VITE_USE_MOCK=false увесь демо-код (зокрема демо-паролі) не потрапляє в бандл */
 export const USE_MOCK: boolean = import.meta.env.VITE_USE_MOCK !== 'false';
 
