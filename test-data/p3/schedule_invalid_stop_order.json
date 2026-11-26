@@ -1,0 +1,39 @@
+{
+  "id": "D-08",
+  "name": "Повтор stop_order",
+  "expected": "rejected",
+  "payload": {
+    "route": {
+      "code": "M1",
+      "direction": "Вокзал → Парк"
+    },
+    "stops": [
+      {
+        "name": "Вокзал",
+        "lat": 49.8408,
+        "lon": 23.9931,
+        "stop_order": 1
+      },
+      {
+        "name": "Площа",
+        "lat": 49.8417,
+        "lon": 24.022,
+        "stop_order": 2
+      },
+      {
+        "name": "Парк",
+        "lat": 49.8309,
+        "lon": 24.0269,
+        "stop_order": 2
+      }
+    ],
+    "trip": {
+      "starts_at": "2026-11-24T09:00:00+02:00",
+      "stop_times": [
+        "09:00",
+        "09:07",
+        "09:15"
+      ]
+    }
+  }
+}

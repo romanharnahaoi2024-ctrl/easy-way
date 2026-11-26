@@ -1,14 +1,4 @@
 [
-  {
-    "user": "demo-allowed",
-    "consent": "active",
-    "dataset": "gps-demo",
-    "expected": 200
-  },
-  {
-    "user": "demo-no-consent",
-    "consent": "none/revoked",
-    "dataset": "gps-demo",
-    "expected": "403 NO_CONSENT"
-  }
+  {"email": "demo-allowed", "role": "consumer", "dataset_code": "gps-demo", "consent": "active", "expected_exchange": 200},
+  {"email": "demo-no-consent", "role": "consumer", "dataset_code": "gps-demo", "consent": "absent", "expected_exchange": 403}
 ]
