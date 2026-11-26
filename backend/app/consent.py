@@ -53,18 +53,19 @@ class ConsentCreate(BaseModel):
 
 
 class ConsentOut(BaseModel):
+    """Контракт з П5: user_email і dataset_code замість числових id."""
     id: int
-    user_id: int
+    user_email: str
     dataset_code: str
     granted_at: datetime
     valid_until: datetime
     revoked_at: datetime | None
 
 
-def _to_out(consent: Consent, dataset_code: str) -> ConsentOut:
+def _to_out(consent: Consent, dataset_code: str, user_email: str) -> ConsentOut:
     return ConsentOut(
         id=consent.id,
-        user_id=consent.user_id,
+        user_email=user_email,
         dataset_code=dataset_code,
         granted_at=consent.granted_at,
         valid_until=consent.valid_until,
@@ -72,9 +73,41 @@ def _to_out(consent: Consent, dataset_code: str) -> ConsentOut:
     )
 
 
+def _email_of(db: Session, current: User, user_id: int) -> str:
+    if current.id == user_id:
+        return current.email
+    owner = db.get(User, user_id)
+    return owner.email if owner is not None else ""
+
+
 def _require_consent_role(roles: list[str]) -> None:
     if not CONSENT_ROLES.intersection(roles):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="permission denied")
+
+
+def fetch_consents(db: Session, only_user_id: int | None) -> list[tuple]:
+    """Згоди з email власника і кодом набору; only_user_id=None означає всі."""
+    query = (
+        db.query(Consent, User.email, Dataset.code)
+        .select_from(Consent)
+        .join(User, User.id == Consent.user_id)
+        .join(Dataset, Dataset.id == Consent.dataset_id)
+    )
+    if only_user_id is not None:
+        query = query.filter(Consent.user_id == only_user_id)
+    return query.order_by(Consent.granted_at.desc(), Consent.id.desc()).all()
+
+
+@router.get("", response_model=list[ConsentOut])
+def list_consents(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Власні згоди; admin бачить усі."""
+    roles = get_user_roles(user, db)
+    _require_consent_role(roles)
+    rows = fetch_consents(db, None if "admin" in roles else user.id)
+    return [_to_out(consent, code, email) for consent, email, code in rows]
 
 
 @router.post("", response_model=ConsentOut, status_code=status.HTTP_201_CREATED)
@@ -100,8 +133,13 @@ def grant_consent(
     dataset = db.query(Dataset).filter(Dataset.code == payload.dataset_code).first()
     if dataset is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="dataset not found")
-    if target_id != user.id and db.get(User, target_id) is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="user not found")
+    if target_id == user.id:
+        target_email = user.email
+    else:
+        target = db.get(User, target_id)
+        if target is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="user not found")
+        target_email = target.email
 
     consent = Consent(
         user_id=target_id,
@@ -113,7 +151,7 @@ def grant_consent(
     db.add(consent)
     db.commit()
     db.refresh(consent)
-    return _to_out(consent, dataset.code)
+    return _to_out(consent, dataset.code, target_email)
 
 
 @router.delete("/{consent_id}", response_model=ConsentOut)
@@ -137,4 +175,4 @@ def revoke_consent(
         db.commit()
 
     dataset = db.get(Dataset, consent.dataset_id)
-    return _to_out(consent, dataset.code if dataset else "")
+    return _to_out(consent, dataset.code if dataset else "", _email_of(db, user, consent.user_id))

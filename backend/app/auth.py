@@ -82,21 +82,11 @@ def record_rbac_event(db: Session, outcome: str, reason_code: str) -> None:
     ))
 
 
-def require_dataset_permission(
-    user: User,
-    dataset_code: str,
-    action: str,
-    db: Session,
-) -> None:
-    dataset = db.query(Dataset).filter(Dataset.code == dataset_code).first()
-    if dataset is None:
-        record_rbac_event(db, "denied", "NO_ROLE_PERMISSION")
-        db.commit()
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="permission denied",
-        )
+def has_dataset_permission(user: User, dataset: Dataset, action: str, db: Session) -> bool:
+    """Лише перевірка права ролі на дію з набором: без запису в аудит і без commit.
 
+    Для UC-06 (EZW-42): запис в аудит робить сервіс обміну в одній транзакції із запитом.
+    """
     allowed = (
         db.query(DatasetPermission.role_id)
         .join(UserRole, UserRole.role_id == DatasetPermission.role_id)
@@ -107,8 +97,18 @@ def require_dataset_permission(
         )
         .first()
     )
+    return allowed is not None
 
-    if allowed is None:
+
+def require_dataset_permission(
+    user: User,
+    dataset_code: str,
+    action: str,
+    db: Session,
+) -> None:
+    """Перевірка з власним записом в аудит (для GET /datasets/{code})."""
+    dataset = db.query(Dataset).filter(Dataset.code == dataset_code).first()
+    if dataset is None or not has_dataset_permission(user, dataset, action, db):
         record_rbac_event(db, "denied", "NO_ROLE_PERMISSION")
         db.commit()
         raise HTTPException(
@@ -116,5 +116,5 @@ def require_dataset_permission(
             detail="permission denied",
         )
 
-    record_rbac_event(db, "success", "OK")
+    record_rbac_event(db, "approved", "OK")
     db.commit()

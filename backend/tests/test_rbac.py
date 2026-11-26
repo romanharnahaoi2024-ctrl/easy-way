@@ -4,7 +4,7 @@ os.environ.setdefault("DB_PASSWORD", "test-password")
 
 from fastapi import HTTPException
 
-from app.auth import require_dataset_permission
+from app.auth import has_dataset_permission, require_dataset_permission
 from app.models import AuditEvent, Dataset, DatasetPermission, User
 
 
@@ -45,9 +45,12 @@ class FakeDB:
         self.commits += 1
 
 
+def make_dataset():
+    return Dataset(id=1, code="gps-demo", kind="gps", schema_version="1.0", requires_consent=True)
+
+
 def test_rbac_allows_matching_role_dataset_and_action():
-    dataset = Dataset(id=1, code="gps-demo", kind="gps", schema_version="1.0", requires_consent=True)
-    db = FakeDB(dataset=dataset, allowed=True)
+    db = FakeDB(dataset=make_dataset(), allowed=True)
     user = User(id=1, email="consumer@example.com", password_hash="hash", is_active=True)
 
     require_dataset_permission(user, "gps-demo", "read", db)
@@ -55,11 +58,11 @@ def test_rbac_allows_matching_role_dataset_and_action():
     assert db.commits == 1
     assert isinstance(db.added[-1], AuditEvent)
     assert db.added[-1].reason_code == "OK"
+    assert db.added[-1].outcome == "approved"
 
 
 def test_rbac_denies_by_default_without_data():
-    dataset = Dataset(id=1, code="gps-demo", kind="gps", schema_version="1.0", requires_consent=True)
-    db = FakeDB(dataset=dataset, allowed=False)
+    db = FakeDB(dataset=make_dataset(), allowed=False)
     user = User(id=2, email="denied@example.com", password_hash="hash", is_active=True)
 
     try:
@@ -72,6 +75,7 @@ def test_rbac_denies_by_default_without_data():
     assert db.commits == 1
     assert isinstance(db.added[-1], AuditEvent)
     assert db.added[-1].reason_code == "NO_ROLE_PERMISSION"
+    assert db.added[-1].outcome == "denied"
 
 
 def test_rbac_unknown_dataset_is_default_deny():
@@ -85,3 +89,19 @@ def test_rbac_unknown_dataset_is_default_deny():
         assert exc.status_code == 403
 
     assert db.added[-1].reason_code == "NO_ROLE_PERMISSION"
+
+
+# --- has_dataset_permission: лише перевірка, без запису і commit (EZW-42) ---
+
+def test_has_permission_true_writes_nothing():
+    db = FakeDB(dataset=make_dataset(), allowed=True)
+    user = User(id=1, email="c@example.com", password_hash="h", is_active=True)
+    assert has_dataset_permission(user, make_dataset(), "read", db) is True
+    assert db.added == [] and db.commits == 0
+
+
+def test_has_permission_false_writes_nothing():
+    db = FakeDB(dataset=make_dataset(), allowed=False)
+    user = User(id=2, email="d@example.com", password_hash="h", is_active=True)
+    assert has_dataset_permission(user, make_dataset(), "read", db) is False
+    assert db.added == [] and db.commits == 0

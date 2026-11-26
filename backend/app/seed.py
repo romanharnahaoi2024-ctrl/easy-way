@@ -14,6 +14,8 @@ from app.models import (
     Stop, StopTime, Trip, User, UserRole, Vehicle,
 )
 
+from app.seed_roles import seed_role_users
+
 DEMO_DATA = {
     "route": {"code": "M1", "direction": "Вокзал → Парк", "name": "Маршрут M1"},
     "stops": [
@@ -177,6 +179,7 @@ def main() -> None:
     demo_password, generated = resolve_demo_password()
     try:
         summary = seed_database(session, demo_password)
+        summary["role_users"] = seed_role_users(session, demo_password)
         if generated:
             print(f"Generated DEMO_SEED_PASSWORD={demo_password}")
         print(json.dumps(summary, ensure_ascii=False))

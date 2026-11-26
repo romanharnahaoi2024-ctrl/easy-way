@@ -1,3 +1,7 @@
+import os
+
+os.environ.setdefault("DB_PASSWORD", "test-password")
+
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -132,8 +136,11 @@ def test_consumer_grants_own_consent(client, monkeypatch):
     setup(monkeypatch, db)
     response = client.post("/consents", json={"dataset_code": "gps-demo", "valid_until": future_iso()})
     assert response.status_code == 201
-    assert response.json()["user_id"] == 1
-    assert response.json()["revoked_at"] is None
+    body = response.json()
+    assert body["user_email"] == "u@example.com"
+    assert body["dataset_code"] == "gps-demo"
+    assert "user_id" not in body
+    assert body["revoked_at"] is None
     assert db.commits == 1
 
 
@@ -150,6 +157,17 @@ def test_consumer_cannot_grant_for_other_user(client, monkeypatch):
         json={"dataset_code": "gps-demo", "valid_until": future_iso(), "user_id": 2},
     )
     assert response.status_code == 403
+
+
+def test_admin_grants_for_other_user_returns_that_email(client, monkeypatch):
+    other = User(id=2, email="other@example.com", password_hash="h", is_active=True)
+    setup(monkeypatch, FakeDB(dataset=dataset(), users=[other]), roles=("admin",))
+    response = client.post(
+        "/consents",
+        json={"dataset_code": "gps-demo", "valid_until": future_iso(), "user_id": 2},
+    )
+    assert response.status_code == 201
+    assert response.json()["user_email"] == "other@example.com"
 
 
 def test_grant_with_past_valid_until_is_422(client, monkeypatch):
@@ -174,6 +192,7 @@ def test_revoke_sets_revoked_at_and_keeps_record(client, monkeypatch):
     setup(monkeypatch, db)
     response = client.delete("/consents/1")
     assert response.status_code == 200
+    assert response.json()["user_email"] == "u@example.com"
     assert consent.revoked_at is not None
     assert 1 in db.consents  # запис не видалено
     assert evaluate_consent([consent], datetime.now(timezone.utc)) == CONSENT_REVOKED
@@ -200,12 +219,52 @@ def test_cannot_revoke_foreign_consent(client, monkeypatch):
 
 def test_admin_can_revoke_foreign_consent(client, monkeypatch):
     consent = make_consent(user_id=2)
-    setup(monkeypatch, FakeDB(dataset=dataset(), consents=[consent]), user_id=1, roles=("admin",))
+    owner = User(id=2, email="owner@example.com", password_hash="h", is_active=True)
+    setup(monkeypatch, FakeDB(dataset=dataset(), consents=[consent], users=[owner]), user_id=1, roles=("admin",))
     response = client.delete("/consents/1")
     assert response.status_code == 200
+    assert response.json()["user_email"] == "owner@example.com"
     assert consent.revoked_at is not None
 
 
 def test_revoke_unknown_consent_is_404(client, monkeypatch):
     setup(monkeypatch, FakeDB(dataset=dataset()))
     assert client.delete("/consents/999").status_code == 404
+
+
+# --- GET /consents ---
+
+def fake_fetch(calls):
+    def fetch(db, only_user_id):
+        calls.append(only_user_id)
+        return [(make_consent(), "u@example.com", "gps-demo")]
+    return fetch
+
+
+def test_list_requires_token(client):
+    assert client.get("/consents").status_code == 401
+
+
+def test_list_returns_only_own_for_consumer(client, monkeypatch):
+    calls = []
+    setup(monkeypatch, FakeDB())
+    monkeypatch.setattr(consent_module, "fetch_consents", fake_fetch(calls))
+    response = client.get("/consents")
+    assert response.status_code == 200
+    assert calls == [1]
+    item = response.json()[0]
+    assert set(item) == {"id", "user_email", "dataset_code", "granted_at", "valid_until", "revoked_at"}
+    assert item["user_email"] == "u@example.com"
+
+
+def test_list_returns_all_for_admin(client, monkeypatch):
+    calls = []
+    setup(monkeypatch, FakeDB(), roles=("admin",))
+    monkeypatch.setattr(consent_module, "fetch_consents", fake_fetch(calls))
+    assert client.get("/consents").status_code == 200
+    assert calls == [None]
+
+
+def test_auditor_cannot_list_consents(client, monkeypatch):
+    setup(monkeypatch, FakeDB(), roles=("auditor",))
+    assert client.get("/consents").status_code == 403

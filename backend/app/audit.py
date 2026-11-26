@@ -18,9 +18,9 @@ REASON_CODES = frozenset({
     NO_CONSENT, CONSENT_REVOKED, VALIDATION_FAILED,
 })
 
-# ПРИПУЩЕННЯ: значення outcome не змінюю (success/denied, як у auth.py).
-# Узгодження з П5 (success -> approved) буде зміною цих рядків.
-OUTCOME_SUCCESS = "success"
+# Значення outcome узгоджені з П5: approved / denied / invalid.
+# У auth.py і main.py використовуються ті самі рядки (імпорт звідти дав би цикл).
+OUTCOME_APPROVED = "approved"
 OUTCOME_DENIED = "denied"
 OUTCOME_INVALID = "invalid"
 
