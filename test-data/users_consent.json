@@ -1,0 +1,4 @@
+[
+  {"email": "demo-allowed", "role": "consumer", "dataset_code": "gps-demo", "consent": "active", "expected_exchange": 200},
+  {"email": "demo-no-consent", "role": "consumer", "dataset_code": "gps-demo", "consent": "absent", "expected_exchange": 403}
+]

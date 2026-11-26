@@ -1,0 +1,9 @@
+[
+  {"id":"D-01","vehicle_id":"BUS-01","observed_at":"2026-11-23T09:00:20+02:00","lat":49.8408,"lon":23.9931,"expected":"accepted"},
+  {"id":"D-02","vehicle_id":"BUS-01","observed_at":"2026-11-23T09:00:35+02:00","lat":49.8417,"lon":24.0220,"expected":"accepted"},
+  {"id":"D-03","vehicle_id":"BUS-01","observed_at":"2026-11-23T09:00:40+02:00","lat":95,"lon":23.9931,"expected":"422_VALIDATION_FAILED"},
+  {"id":"D-04","vehicle_id":"BUS-01","observed_at":"2026-11-23T09:00:40+02:00","lat":49.8408,"lon":181,"expected":"422_VALIDATION_FAILED"},
+  {"id":"D-05","vehicle_id":"BUS-01","observed_at":"2026-11-23T09:00:40+02:00","lat":null,"lon":23.9931,"expected":"422_VALIDATION_FAILED"},
+  {"id":"D-06","vehicle_id":"BUS-01","observed_at":"2026-11-23T09:00:20+02:00","lat":49.8408,"lon":23.9931,"expected":"duplicate_rejected"},
+  {"id":"D-07","vehicle_id":"BUS-01","observed_at":"2026-11-23T08:59:00+02:00","lat":49.8408,"lon":23.9931,"expected":"accepted_stale"}
+]
