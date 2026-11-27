@@ -6,6 +6,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, isConsentReason, reasonFromStatus, request } from '../api/http';
 import { filterAudit, normalizeAudit, normalizeExchangeResult } from '../api/data';
 import { REASON } from '../lib/format';
+import { normalizeUser } from '../api/auth';
+import { hasChecksums } from '../pages/AuditPage';
+import { initials } from '../components/ui';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -79,5 +82,32 @@ describe('відповідь 200 і журнал аудиту від серве�
     expect(filterAudit(list, { outcome: 'denied' }).map((e) => e.id)).toEqual(['2']);
     expect(filterAudit(list, { q: 'req_1' }).map((e) => e.id)).toEqual(['1']);
     expect(filterAudit(list, { dataset: 'gps-demo' })).toHaveLength(1);
+  });
+});
+
+describe('реальні відповіді сервера EZW-42 (прогін 27.11)', () => {
+  it('request_id-число з помилки стає рядком', async () => {
+    stubFetch(403, { detail: 'no valid consent', reason_code: 'NO_CONSENT', request_id: 7 });
+    const e = await fail(request('/exchange/requests', { method: 'POST', body: '{}' }));
+    expect(e.body?.request_id).toBe('7');
+    expect(e.message).toBe('Немає чинної згоди на обробку цього набору даних.');
+  });
+
+  it('англійські тексти сервера показуються українською', async () => {
+    stubFetch(401, { detail: 'invalid credentials', reason_code: 'UNAUTHENTICATED', request_id: null });
+    expect((await fail(request('/auth/login'))).message).toBe('Невірна електронна пошта або пароль.');
+  });
+
+  it('full_name і organization = null не ламають екрани', () => {
+    const u = normalizeUser({ id: 3, email: 'i.melnyk@easyway.lviv.ua', full_name: null, role: 'consumer', organization: null, roles: ['consumer'] });
+    expect(u).toEqual({ id: '3', email: 'i.melnyk@easyway.lviv.ua', full_name: 'i.melnyk@easyway.lviv.ua', role: 'consumer', organization: null });
+    expect(initials(null)).toBe('');
+    expect(initials(u.full_name)).toBe('IM');
+  });
+
+  it('без hash/prev_hash журнал не заявляє про цілісний ланцюжок', () => {
+    const e = normalizeAudit({ id: 1, request_id: 4, occurred_at: '2026-11-27T13:05:06Z', outcome: 'approved', reason_code: 'OK', user_id: 3, dataset: 'gps-demo' });
+    expect(e.request_id).toBe('4');
+    expect(hasChecksums([e])).toBe(false);
   });
 });

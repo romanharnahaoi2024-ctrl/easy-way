@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { CloudUpload, Download, FileJson, Send, TriangleAlert } from 'lucide-react';
 import { getVehiclePositions, listDatasets, listSubmissions, submitDataset } from '../api/data';
-import { ApiError } from '../api/http';
+import { ApiError, USE_MOCK } from '../api/http';
 import type { Submission, VehiclePosition } from '../api/types';
 import { validateRecords, type ValidationResult } from '../api/schemas';
 import { useAuth } from '../auth/AuthContext';
@@ -105,7 +105,7 @@ export function CarrierPage() {
     <>
       <PageHeader
         title="Подання даних"
-        subtitle={`UC-05 · ${user?.organization ?? ''} · файл перевіряється за JSON Schema перед надсиланням і повторно на сервері`}
+        subtitle={`UC-05 · ${user?.organization ? `${user.organization} · ` : ''}файл перевіряється за JSON Schema перед надсиланням і повторно на сервері`}
         actions={
           <>
             <Button variant="secondary" icon={<Download size={18} aria-hidden />} onClick={() => downloadSample(false)}>
@@ -115,6 +115,11 @@ export function CarrierPage() {
           </>
         }
       />
+      {!USE_MOCK && (
+        <Notice tone="info">
+          Подання файлів (UC-05) ще не входить у серверну частину EZW-42: перевірка файлу за JSON Schema працює в браузері, а надсилання на сервер з’явиться разом з ендпоінтом подань.
+        </Notice>
+      )}
       <div className="cr-grid">
         <div className="cr-col">
           <Card title="Нове подання" subtitle="Розклади, зупинки, GPS-позиції, інциденти" id="upload">

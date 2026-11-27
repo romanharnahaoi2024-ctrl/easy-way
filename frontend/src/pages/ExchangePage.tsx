@@ -234,7 +234,7 @@ function DatasetOption({ d, selected, onSelect }: { d: Dataset; selected: boolea
       <span className="ds-card__body">
         <span className="t-title-s">{d.title ?? d.code}</span>
         <span className="t-body-s muted">
-          {d.owner} · <span className="mono">{d.code}</span>
+          {d.owner ? `${d.owner} · ` : ''}<span className="mono">{d.code}</span>
         </span>
         <span className="ds-card__badges">
           {cl && <Badge tone={cl.tone}>{cl.label}</Badge>}

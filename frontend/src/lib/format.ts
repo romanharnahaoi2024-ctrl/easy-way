@@ -48,7 +48,7 @@ export const ACTION_LABEL: Record<string, string> = {
   'auth.login': 'Вхід у систему',
   'auth.login_failed': 'Невдалий вхід',
   'exchange.request': 'Запит на обмін',
-  'audit.event': 'Подія',
+  'audit.event': 'Подія без запиту',
   'consent.grant': 'Надання згоди',
   'consent.revoke': 'Відкликання згоди',
   'dataset.submit': 'Подання набору',

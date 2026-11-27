@@ -14,6 +14,9 @@ import './screens.css';
 const PAGE = 10;
 
 /** Перевірка ланцюжка: prev_hash кожної події дорівнює hash попередньої (старішої) */
+/** Чи надсилає сервер контрольні суми взагалі (EZW-42 поки ні) */
+export const hasChecksums = (events: AuditEvent[]) => events.some((e) => Boolean(e.hash || e.prev_hash));
+
 export function chainIntact(events: AuditEvent[]) {
   for (let i = 0; i < events.length - 1; i++) {
     if (events[i].prev_hash && events[i + 1].hash && events[i].prev_hash !== events[i + 1].hash) return false;
@@ -58,6 +61,7 @@ export function AuditPage() {
   const selected = rows.find((r) => r.id === sel) ?? null;
   const todayEvents = (all.data ?? []).filter((e) => fmtDate(e.occurred_at) === fmtDate(new Date().toISOString()));
   const intact = chainIntact(all.data ?? []);
+  const checksums = hasChecksums(all.data ?? []);
   const reset = () => {
     setDay(toInputDate(new Date()));
     setOutcome('');
@@ -84,7 +88,11 @@ export function AuditPage() {
         subtitle="UC-07 · незмінний журнал: хто, коли, які дані, результат і причина"
         actions={
           <>
-            <Badge tone={intact ? 'success' : 'danger'}>{intact ? 'Ланцюжок цілісний' : 'Ланцюжок порушено'}</Badge>
+            {checksums ? (
+              <Badge tone={intact ? 'success' : 'danger'}>{intact ? 'Ланцюжок цілісний' : 'Ланцюжок порушено'}</Badge>
+            ) : (
+              <Badge tone="neutral">Контрольних сум немає</Badge>
+            )}
             <Button variant="secondary" icon={<Download size={18} aria-hidden />} onClick={exportCsv} disabled={rows.length === 0}>
               Експорт CSV
             </Button>
@@ -247,10 +255,20 @@ export function AuditPage() {
                 <div className="chain__head">
                   <Fingerprint size={16} aria-hidden />
                   <span>Ланцюжок контрольних сум</span>
-                  <Badge tone={intact ? 'success' : 'danger'}>{intact ? 'Цілісний' : 'Порушено'}</Badge>
+                  {checksums ? (
+                    <Badge tone={intact ? 'success' : 'danger'}>{intact ? 'Цілісний' : 'Порушено'}</Badge>
+                  ) : (
+                    <Badge tone="neutral">не перевіряється</Badge>
+                  )}
                 </div>
-                <p className="mono">prev {selected.prev_hash ?? '—'}</p>
-                <p className="mono">hash {selected.hash ?? '—'}</p>
+                {checksums ? (
+                  <>
+                    <p className="mono">prev {selected.prev_hash ?? '—'}</p>
+                    <p className="mono">hash {selected.hash ?? '—'}</p>
+                  </>
+                ) : (
+                  <p className="t-body-s muted">Сервер поки не надсилає hash і prev_hash, тому цілісність ланцюжка на клієнті не перевіряється.</p>
+                )}
               </div>
             </>
           ) : (

@@ -117,15 +117,15 @@ export function Logo({ dark }: { dark?: boolean }) {
 }
 
 /* ---------- Avatar ---------- */
-export function initials(name: string) {
-  return name
-    .split(/\s+/)
+export function initials(name: string | null | undefined) {
+  return (name ?? '')
+    .split(/[\s@.]+/)
     .filter(Boolean)
     .slice(0, 2)
     .map((w) => w[0]?.toUpperCase())
     .join('');
 }
-export function Avatar({ name }: { name: string }) {
+export function Avatar({ name }: { name: string | null | undefined }) {
   return (
     <span className="avatar" aria-hidden>
       {initials(name)}

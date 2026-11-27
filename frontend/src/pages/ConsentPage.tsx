@@ -258,7 +258,7 @@ function GrantDialog({ ds, onClose, onConfirm }: { ds: Dataset; onClose: () => v
       }
     >
       <p>
-        Набір «<b>{ds.title}</b>» ({ds.owner}). {ds.description}
+        Набір «<b>{ds.title}</b>»{ds.owner ? ` (${ds.owner})` : ''}. {ds.description}
       </p>
       <div className="form-row">
         <label htmlFor="until">Діє до</label>

@@ -28,7 +28,7 @@ cp .env.example .env      # за замовчуванням увімкнено �
 npm run dev               # http://localhost:5173
 ```
 
-Інші команди: `npm test` (37 тестів), `npm run build` (збірка в `dist/`), `npm run preview` (перегляд збірки).
+Інші команди: `npm test` (41 тест), `npm run build` (збірка в `dist/`), `npm run preview` (перегляд збірки).
 
 Наскрізний прогін у Chrome: `npm run build && npm run preview`, потім `pip install playwright && python e2e/run.py "<шлях до Chrome>"`. Скриншоти з’являться в `e2e/screenshots`.
 
@@ -64,8 +64,10 @@ src/
   test/         модульні й екранні тести
 scripts/        gen-validators.mjs — попередня компіляція валідаторів
 e2e/run.py      наскрізний прогін у Chrome + скріншоти
-../docs/        API_CONTRACT.md — контракт API (спільний для команди)
+docs/           API_CONTRACT.md
 ```
+
+**Прогін зі справжнім сервером (EZW-54):** `e2e/run_real.py`, як описано в розділі 5 контракту. Перший прогін 27.11.2026: 200, 403 (згоду відкликано), 422, 403 (немає згоди), 403 (немає права), журнал аудиту з тими самими `request_id` — усе пройдено.
 
 ## Безпека
 

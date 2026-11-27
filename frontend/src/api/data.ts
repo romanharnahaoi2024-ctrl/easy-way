@@ -3,7 +3,7 @@
  * VITE_USE_MOCK=true → демо-сервер у браузері; false → справжній REST API за адресою VITE_API_URL.
  * Очікуваний контракт описано в ../docs/API_CONTRACT.md (узгоджено з П4 25.11.2026, EZW-42).
  */
-import { qs, request, USE_MOCK } from './http';
+import { ApiError, qs, request, USE_MOCK } from './http';
 /** Демо-сервер завантажується лише в демо-режимі (динамічний імпорт вирізається зі збірки при VITE_USE_MOCK=false) */
 const mock = () => import('./mock/server');
 import type {
@@ -14,7 +14,17 @@ export const getRoutes = (): Promise<Route[]> => (USE_MOCK ? mock().then((x) => 
 
 export const getVehiclePositions = (): Promise<VehiclePosition[]> => (USE_MOCK ? mock().then((x) => x.getVehiclePositions()) : request('/positions/latest'));
 
-export const listDatasets = (): Promise<Dataset[]> => (USE_MOCK ? mock().then((x) => x.listDatasets()) : request('/datasets'));
+export const listDatasets = (): Promise<Dataset[]> =>
+  USE_MOCK ? mock().then((x) => x.listDatasets()) : request<Dataset[]>('/datasets').then((l) => l.map(normalizeDataset));
+
+/** Людські назви відомих наборів: сервер EZW-42 віддає лише code, kind, schema_version, requires_consent */
+const DATASET_TITLES: Record<string, string> = {
+  'gps-demo': 'GPS-позиції транспорту (демо)',
+  'schedule-demo': 'Розклад руху (демо)',
+};
+export function normalizeDataset(d: Dataset): Dataset {
+  return { ...d, title: d.title ?? DATASET_TITLES[d.code] ?? d.code };
+}
 
 export const createExchangeRequest = (p: ExchangePayload): Promise<ExchangeResult> =>
   USE_MOCK
@@ -34,12 +44,30 @@ export function normalizeExchangeResult(r: Partial<ExchangeResult>): ExchangeRes
   };
 }
 
-export const listMyRequests = (): Promise<ExchangeRequest[]> => (USE_MOCK ? mock().then((x) => x.listMyRequests()) : request('/exchange/requests?mine=true'));
+export const listMyRequests = (): Promise<ExchangeRequest[]> =>
+  USE_MOCK
+    ? mock().then((x) => x.listMyRequests())
+    : request<(Omit<ExchangeRequest, 'request_id'> & { request_id: string | number })[]>('/exchange/requests?mine=true').then((l) =>
+        l.map((r) => ({ ...r, request_id: String(r.request_id) })),
+      );
 
-export const listConsents = (all = false): Promise<Consent[]> => (USE_MOCK ? mock().then((x) => x.listConsents(all)) : request('/consents') /* для admin сервер сам повертає всі згоди */);
+export const listConsents = (all = false): Promise<Consent[]> =>
+  USE_MOCK
+    ? mock().then((x) => x.listConsents(all))
+    : request<(Omit<Consent, 'id'> & { id: string | number })[]>('/consents') /* для admin сервер сам повертає всі згоди */
+        .then((l) => l.map((c) => ({ ...c, id: String(c.id) })));
+
+/** Сервер приймає valid_until лише як дату-час із часовим поясом: «2027-01-31» → кінець цього дня за місцевим часом */
+export function toServerDateTime(v: string): string {
+  return /^\d{4}-\d{2}-\d{2}$/.test(v) ? new Date(`${v}T23:59:59`).toISOString() : v;
+}
 
 export const grantConsent = (dataset_code: string, valid_until: string): Promise<Consent> =>
-  USE_MOCK ? mock().then((x) => x.grantConsent(dataset_code, valid_until)) : request('/consents', { method: 'POST', body: JSON.stringify({ dataset_code, valid_until }) });
+  USE_MOCK
+    ? mock().then((x) => x.grantConsent(dataset_code, valid_until))
+    : request<Omit<Consent, 'id'> & { id: string | number }>('/consents', { method: 'POST', body: JSON.stringify({ dataset_code, valid_until: toServerDateTime(valid_until) }) }).then(
+        (c) => ({ ...c, id: String(c.id) }),
+      );
 
 export const revokeConsent = (id: string): Promise<Consent | null> =>
   USE_MOCK ? mock().then((x) => x.revokeConsent(id)) : request<Consent | null>(`/consents/${encodeURIComponent(id)}`, { method: 'DELETE' });
@@ -49,7 +77,14 @@ export const submitDataset = (dataset_code: string, file_name: string, data: unk
     ? mock().then((x) => x.submitDataset(dataset_code, file_name, data))
     : request(`/datasets/${encodeURIComponent(dataset_code)}/submissions${qs({ file_name })}`, { method: 'POST', body: JSON.stringify(data) });
 
-export const listSubmissions = (): Promise<Submission[]> => (USE_MOCK ? mock().then((x) => x.listSubmissions()) : request('/submissions'));
+/** UC-05 (подання файлів) до EZW-42 не входить: поки сервер відповідає 404, історія подань порожня */
+export const listSubmissions = (): Promise<Submission[]> =>
+  USE_MOCK
+    ? mock().then((x) => x.listSubmissions())
+    : request<Submission[]>('/submissions').catch((e: unknown) => {
+        if (e instanceof ApiError && e.status === 404) return [];
+        throw e;
+      });
 
 export const listAuditEvents = (f: AuditFilters = {}): Promise<AuditEvent[]> =>
   USE_MOCK
@@ -66,7 +101,7 @@ export function normalizeAudit(e: AuditEventRaw): AuditEvent {
   const noUser = e.user_id === null || e.user_id === undefined;
   return {
     id: String(e.id),
-    request_id: e.request_id ?? null,
+    request_id: e.request_id === null || e.request_id === undefined ? null : String(e.request_id),
     occurred_at: e.occurred_at,
     user_email: e.user_email ?? (noUser ? 'Система' : `користувач #${e.user_id}`),
     role: e.role ?? (noUser ? 'system' : 'unknown'),

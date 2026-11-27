@@ -90,7 +90,7 @@ export function AppLayout() {
             <div>
               <p className="t-title-s">{user.full_name}</p>
               <p className="t-label-s muted">
-                {roleLabel} · {user.organization}
+                {roleLabel}{user.organization ? ` · ${user.organization}` : ''}
               </p>
             </div>
             <ChevronDown size={16} className="muted" aria-hidden />

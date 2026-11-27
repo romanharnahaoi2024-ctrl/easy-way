@@ -61,9 +61,36 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
           ? String((detail[0] as { msg: string }).msg)
           : (STATUS_MESSAGES[res.status] ?? `Помилка ${res.status}`);
     const reason_code = (body.reason_code as ReasonCode | undefined) ?? reasonFromStatus(res.status, message);
-    throw new ApiError(message, res.status, { ...body, detail: message, reason_code, errors: Array.isArray(body.errors) ? body.errors : [] });
+    // request_id від сервера — число; у клієнті всюди працюємо з рядком
+    const request_id = body.request_id === null || body.request_id === undefined ? body.request_id : String(body.request_id);
+    const shown = humanMessage(message, res.status, reason_code);
+    throw new ApiError(shown, res.status, { ...body, detail: message, reason_code, request_id, errors: Array.isArray(body.errors) ? body.errors : [] });
   }
   return data as T;
+}
+
+/** Відомі англійські тексти помилок сервера (EZW-42) */
+const SERVER_DETAILS: Record<string, string> = {
+  'invalid credentials': 'Невірна електронна пошта або пароль.',
+  'account locked': 'Обліковий запис тимчасово заблоковано після кількох невдалих спроб входу. Спробуйте пізніше.',
+  'not found': 'Сервер ще не підтримує цю дію або ресурс не знайдено.',
+};
+/** Пояснення для користувача за кодом причини, якщо сервер надіслав технічний текст англійською */
+const REASON_DETAILS: Record<string, string> = {
+  UNAUTHENTICATED: 'Сесія завершилась або токен недійсний. Увійдіть знову.',
+  NO_ROLE_PERMISSION: 'Ваша роль не має права на цю дію з набором даних.',
+  NO_CONSENT: 'Немає чинної згоди на обробку цього набору даних.',
+  CONSENT_REVOKED: 'Згоду на обробку цього набору даних відкликано.',
+  VALIDATION_FAILED: 'Дані з джерела не пройшли перевірку JSON Schema, тому не видані.',
+};
+
+/** Текст для користувача: українська з сервера як є, англійська — замінюється зрозумілим поясненням */
+export function humanMessage(detail: string, status: number, reason?: string): string {
+  if (/[а-щьюяєіїґ]/i.test(detail)) return detail;
+  const known = SERVER_DETAILS[detail.trim().toLowerCase()];
+  if (known) return known;
+  if (reason && REASON_DETAILS[reason]) return REASON_DETAILS[reason];
+  return STATUS_MESSAGES[status] ?? detail;
 }
 
 /**

@@ -4,9 +4,11 @@ import type { Role } from '../config/roles';
 export interface User {
   id: string;
   email: string;
+  /** якщо сервер не надіслав ім’я — тут email */
   full_name: string;
   role: Role;
-  organization: string;
+  /** null, поки сервер не віддає організацію */
+  organization: string | null;
 }
 
 export interface LoginResponse {
@@ -159,7 +161,8 @@ export interface AuditEvent {
 /** Запис GET /audit у тому вигляді, як його віддає сервер (EZW-42) */
 export interface AuditEventRaw {
   id: string | number;
-  request_id: string | null;
+  /** сервер віддає число */
+  request_id: string | number | null;
   occurred_at: string;
   outcome: AuditOutcome;
   reason_code: ReasonCode | string;
