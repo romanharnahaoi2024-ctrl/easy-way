@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["vehicle_id", "observed_at", "lat", "lon"],
+  "properties": {
+    "vehicle_id": {"type": "string", "minLength": 1},
+    "observed_at": {"type": "string"},
+    "lat": {"type": "number", "minimum": -90, "maximum": 90},
+    "lon": {"type": "number", "minimum": -180, "maximum": 180}
+  }
+}

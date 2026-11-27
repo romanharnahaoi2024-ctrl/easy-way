@@ -6,3 +6,5 @@ __pycache__/
 .venv/
 *.tsbuildinfo
 .DS_Store
+whatIHave.md
+API_TOKEN
