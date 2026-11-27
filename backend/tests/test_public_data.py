@@ -80,5 +80,6 @@ def test_datasets_endpoint_returns_only_metadata(client, monkeypatch):
         lambda db: [Dataset(id=1, code="gps-demo", kind="gps", schema_version="1.0", requires_consent=True)],
     )
     assert client.get("/datasets").json() == [
-        {"code": "gps-demo", "kind": "gps", "schema_version": "1.0", "requires_consent": True}
+        {"code": "gps-demo", "kind": "gps", "schema_version": "1.0", "requires_consent": True,
+         "title": None, "classification": None, "owner": None, "description": None}
     ]

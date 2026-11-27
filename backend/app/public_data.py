@@ -93,6 +93,10 @@ def list_datasets(user: User = Depends(get_current_user), db: Session = Depends(
             "kind": item.kind,
             "schema_version": item.schema_version,
             "requires_consent": item.requires_consent,
+            "title": item.title,
+            "classification": item.classification,
+            "owner": item.owner,
+            "description": item.description,
         }
         for item in fetch_datasets(db)
     ]

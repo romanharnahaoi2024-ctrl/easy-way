@@ -118,6 +118,10 @@ class Dataset(Base):
     kind: Mapped[str] = mapped_column(String(32))
     schema_version: Mapped[str] = mapped_column(String(32))
     requires_consent: Mapped[bool] = mapped_column(Boolean, default=False)
+    title: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    classification: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    owner: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    description: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
 
 class DatasetPermission(Base):

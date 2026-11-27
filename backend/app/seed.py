@@ -127,13 +127,21 @@ def seed_database(session: Session, demo_password: str) -> dict:
 
     dataset = session.query(Dataset).filter_by(code="gps-demo").first()
     if dataset is None:
-        dataset = Dataset(code="gps-demo", kind="gps", schema_version="1.0", requires_consent=True)
+        dataset = Dataset(
+            code="gps-demo", kind="gps", schema_version="1.0", requires_consent=True,
+            title="GPS positions (demo)", classification="personal",
+            owner="Easy Way demo carrier", description="Demo GPS positions of BUS-01",
+        )
         session.add(dataset)
         session.flush()
     else:
         dataset.kind = "gps"
         dataset.schema_version = "1.0"
         dataset.requires_consent = True
+        dataset.title = "GPS positions (demo)"
+        dataset.classification = "personal"
+        dataset.owner = "Easy Way demo carrier"
+        dataset.description = "Demo GPS positions of BUS-01"
 
     consumer = get_or_create(session, Role, code="consumer")
     permission = session.query(DatasetPermission).filter_by(role_id=consumer.id, dataset_id=dataset.id, action="read").first()
