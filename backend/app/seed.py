@@ -131,6 +131,7 @@ def seed_database(session: Session, demo_password: str) -> dict:
             code="gps-demo", kind="gps", schema_version="1.0", requires_consent=True,
             title="GPS positions (demo)", classification="personal",
             owner="Easy Way demo carrier", description="Demo GPS positions of BUS-01",
+            retention_days=30,
         )
         session.add(dataset)
         session.flush()
@@ -142,6 +143,7 @@ def seed_database(session: Session, demo_password: str) -> dict:
         dataset.classification = "personal"
         dataset.owner = "Easy Way demo carrier"
         dataset.description = "Demo GPS positions of BUS-01"
+        dataset.retention_days = 30
 
     consumer = get_or_create(session, Role, code="consumer")
     permission = session.query(DatasetPermission).filter_by(role_id=consumer.id, dataset_id=dataset.id, action="read").first()

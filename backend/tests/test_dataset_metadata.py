@@ -1,4 +1,4 @@
-"""EZW-46: GET /datasets returns catalog metadata."""
+"""EZW-46/47: GET /datasets returns catalog metadata and retention period."""
 from types import SimpleNamespace
 
 import pytest
@@ -20,14 +20,16 @@ def client(monkeypatch):
 
 def _dataset(**extra):
     base = dict(code="gps-demo", kind="gps", schema_version="1.0", requires_consent=True,
-                title=None, classification=None, owner=None, description=None)
+                title=None, classification=None, owner=None, description=None,
+                retention_days=None)
     base.update(extra)
     return SimpleNamespace(**base)
 
 
 def test_datasets_return_metadata(client, monkeypatch):
     item = _dataset(title="GPS positions", classification="personal",
-                    owner="Demo carrier", description="Demo GPS feed")
+                    owner="Demo carrier", description="Demo GPS feed",
+                    retention_days=30)
     monkeypatch.setattr(public_data, "fetch_datasets", lambda db: [item])
     response = client.get("/datasets")
     assert response.status_code == 200
@@ -37,6 +39,7 @@ def test_datasets_return_metadata(client, monkeypatch):
     assert body["classification"] == "personal"
     assert body["owner"] == "Demo carrier"
     assert body["description"] == "Demo GPS feed"
+    assert body["retention_days"] == 30
 
 
 def test_datasets_metadata_may_be_null(client, monkeypatch):
@@ -46,6 +49,7 @@ def test_datasets_metadata_may_be_null(client, monkeypatch):
     body = response.json()[0]
     assert body["title"] is None
     assert body["classification"] is None
+    assert body["retention_days"] is None
     assert body["requires_consent"] is True
 
 

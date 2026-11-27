@@ -81,5 +81,6 @@ def test_datasets_endpoint_returns_only_metadata(client, monkeypatch):
     )
     assert client.get("/datasets").json() == [
         {"code": "gps-demo", "kind": "gps", "schema_version": "1.0", "requires_consent": True,
-         "title": None, "classification": None, "owner": None, "description": None}
+         "title": None, "classification": None, "owner": None, "description": None,
+         "retention_days": None}
     ]

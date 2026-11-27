@@ -122,6 +122,10 @@ class Dataset(Base):
     classification: Mapped[str | None] = mapped_column(String(32), nullable=True)
     owner: Mapped[str | None] = mapped_column(String(128), nullable=True)
     description: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    retention_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    __table_args__ = (
+        CheckConstraint("retention_days IS NULL OR retention_days > 0", name="ck_datasets_retention_days"),
+    )
 
 
 class DatasetPermission(Base):
