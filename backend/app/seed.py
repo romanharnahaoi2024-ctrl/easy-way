@@ -31,10 +31,16 @@ DEMO_DATA = {
     ],
 }
 
-def get_or_create(session: Session, model, **values):
+
+def get_or_create(session: Session, model, defaults: dict | None = None, **values):
+    """Знаходить запис за `values` або створює його.
+
+    `defaults` використовується лише при створенні і не входить у пошук.
+    Через це обов'язкові поля (наприклад, password_hash) задаються ще до flush().
+    """
     instance = session.query(model).filter_by(**values).first()
     if instance is None:
-        instance = model(**values)
+        instance = model(**values, **(defaults or {}))
         session.add(instance)
         session.flush()
     return instance
@@ -153,6 +159,7 @@ def seed_database(session: Session, demo_password: str) -> dict:
     allowed = get_or_create(
         session,
         User,
+        defaults={"password_hash": hash_password(demo_password), "is_active": True},
         email="i.melnyk@easyway.lviv.ua",
     )
     allowed.password_hash = hash_password(demo_password)
@@ -173,6 +180,7 @@ def seed_database(session: Session, demo_password: str) -> dict:
     no_consent = get_or_create(
         session,
         User,
+        defaults={"password_hash": hash_password(demo_password), "is_active": True},
         email="demo.no-consent@easyway.lviv.ua",
     )
     no_consent.password_hash = hash_password(demo_password)
