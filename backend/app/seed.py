@@ -31,10 +31,16 @@ DEMO_DATA = {
     ],
 }
 
-def get_or_create(session: Session, model, **values):
+
+def get_or_create(session: Session, model, defaults: dict | None = None, **values):
+    """Знаходить запис за `values` або створює його.
+
+    `defaults` використовується лише при створенні і не входить у пошук.
+    Через це обов'язкові поля (наприклад, password_hash) задаються ще до flush().
+    """
     instance = session.query(model).filter_by(**values).first()
     if instance is None:
-        instance = model(**values)
+        instance = model(**values, **(defaults or {}))
         session.add(instance)
         session.flush()
     return instance
@@ -127,13 +133,23 @@ def seed_database(session: Session, demo_password: str) -> dict:
 
     dataset = session.query(Dataset).filter_by(code="gps-demo").first()
     if dataset is None:
-        dataset = Dataset(code="gps-demo", kind="gps", schema_version="1.0", requires_consent=True)
+        dataset = Dataset(
+            code="gps-demo", kind="gps", schema_version="1.0", requires_consent=True,
+            title="GPS positions (demo)", classification="personal",
+            owner="Easy Way demo carrier", description="Demo GPS positions of BUS-01",
+            retention_days=30,
+        )
         session.add(dataset)
         session.flush()
     else:
         dataset.kind = "gps"
         dataset.schema_version = "1.0"
         dataset.requires_consent = True
+        dataset.title = "GPS positions (demo)"
+        dataset.classification = "personal"
+        dataset.owner = "Easy Way demo carrier"
+        dataset.description = "Demo GPS positions of BUS-01"
+        dataset.retention_days = 30
 
     consumer = get_or_create(session, Role, code="consumer")
     permission = session.query(DatasetPermission).filter_by(role_id=consumer.id, dataset_id=dataset.id, action="read").first()
@@ -143,6 +159,7 @@ def seed_database(session: Session, demo_password: str) -> dict:
     allowed = get_or_create(
         session,
         User,
+        defaults={"password_hash": hash_password(demo_password), "is_active": True},
         email="i.melnyk@easyway.lviv.ua",
     )
     allowed.password_hash = hash_password(demo_password)
@@ -163,6 +180,7 @@ def seed_database(session: Session, demo_password: str) -> dict:
     no_consent = get_or_create(
         session,
         User,
+        defaults={"password_hash": hash_password(demo_password), "is_active": True},
         email="demo.no-consent@easyway.lviv.ua",
     )
     no_consent.password_hash = hash_password(demo_password)
